@@ -3,131 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <title>Sosiologe</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#020617}
-button,input,textarea{background:#020617;color:#fff;border:1px solid #334155;padding:8px;border-radius:6px}
-.hidden{display:none}
-.post{background:#020617;margin:10px;padding:10px;border-radius:10px}
-.comment{margin-left:10px;font-size:14px;color:#cbd5f5}
-.admin{border:2px solid red}
+body { margin:0; font-family:Arial; background:#111; color:white }
+header { padding:10px; background:#1c1c1c; display:flex; justify-content:space-between }
+button { background:#3a6df0; color:white; border:none; padding:8px; border-radius:6px }
+input, textarea { width:100%; margin:5px 0; padding:8px; border-radius:6px; border:none }
+#auth, #app { max-width:500px; margin:auto; padding:15px }
+.post { background:#1e1e1e; padding:10px; border-radius:8px; margin-top:10px }
+.small { font-size:12px; opacity:.7 }
+.admin { background:#ff3b3b }
 </style>
 </head>
+
 <body>
 
 <header>
   <b>Sosiologe</b>
-  <button id="logoutBtn" class="hidden">Выйти</button>
+  <button onclick="logout()">Выйти</button>
 </header>
 
 <div id="auth">
   <h3>Вход / Регистрация</h3>
-  <input id="email" placeholder="email"><br><br>
-  <input id="password" placeholder="пароль" type="password"><br><br>
-  <input id="name" placeholder="имя (для регистрации)"><br><br>
-  <button onclick="login()">Войти</button>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Пароль">
+  <input id="username" placeholder="Имя">
   <button onclick="register()">Регистрация</button>
+  <button onclick="login()">Вход</button>
 </div>
 
-<div id="app" class="hidden">
-  <h3>Создать пост</h3>
-  <textarea id="postText" placeholder="что нового?"></textarea><br>
+<div id="app" style="display:none">
+  <h3 id="me"></h3>
+
+  <textarea id="postText" placeholder="Что нового?"></textarea>
   <button onclick="addPost()">Опубликовать</button>
 
-  <h3>Лента</h3>
   <div id="posts"></div>
 </div>
 
-<div id="adminPanel" class="hidden">
-  <h2>Админ панель</h2>
-  <div id="users"></div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
+<script>
 const firebaseConfig = {
   apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
   authDomain: "sosiologe.firebaseapp.com",
+  databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
   projectId: "sosiologe",
+  storageBucket: "sosiologe.firebasestorage.app",
+  messagingSenderId: "651066103994",
+  appId: "1:651066103994:web:13f35d4e31bba79c160a83"
 };
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
 const ADMIN_UID = "fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore();
-
-window.login = async () => {
-  await signInWithEmailAndPassword(auth,email.value,password.value);
-}
-window.register = async () => {
-  const cred = await createUserWithEmailAndPassword(auth,email.value,password.value);
-  await setDoc(doc(db,"users",cred.user.uid),{name:name.value,ban:false});
-}
-
-logoutBtn.onclick=()=>signOut(auth);
-
-onAuthStateChanged(auth, async user=>{
-  if(!user){authDiv(true);return;}
-  authDiv(false);
-  loadPosts();
-  if(user.uid===ADMIN_UID)adminPanel.classList.remove("hidden");
+auth.onAuthStateChanged(user=>{
+  if(user){
+    document.getElementById("auth").style.display="none";
+    document.getElementById("app").style.display="block";
+    db.ref("users/"+user.uid).once("value").then(s=>{
+      document.getElementById("me").innerText = "@" + s.val().name;
+    });
+    loadPosts();
+  }
 });
 
-function authDiv(show){
-  auth.classList.toggle("hidden",!show);
-  app.classList.toggle("hidden",show);
-  logoutBtn.classList.toggle("hidden",show);
+function register(){
+  auth.createUserWithEmailAndPassword(
+    email.value, password.value
+  ).then(cred=>{
+    db.ref("users/"+cred.user.uid).set({
+      name: username.value
+    });
+  });
 }
 
-window.addPost = async ()=>{
-  const u=auth.currentUser;
-  const ud=await getDoc(doc(db,"users",u.uid));
-  if(ud.data().ban)return alert("Ты забанен");
-  await addDoc(collection(db,"posts"),{
-    text:postText.value,
-    uid:u.uid,
-    likes:[]
+function login(){
+  auth.signInWithEmailAndPassword(
+    email.value, password.value
+  );
+}
+
+function logout(){ auth.signOut(); }
+
+function addPost(){
+  const user = auth.currentUser;
+  db.ref("posts").push({
+    uid: user.uid,
+    text: postText.value,
+    time: Date.now(),
+    likes:{}
   });
   postText.value="";
 }
 
 function loadPosts(){
-  onSnapshot(collection(db,"posts"),snap=>{
+  db.ref("posts").orderByChild("time").on("value", snap=>{
     posts.innerHTML="";
-    snap.forEach(d=>{
-      const p=d.data();
-      const div=document.createElement("div");
-      div.className="post";
-      div.innerHTML=`
-        <div>${p.text}</div>
-        <button onclick="like('${d.id}')">❤️ ${p.likes.length}</button>
-        <input placeholder="комментарий" onkeydown="if(event.key==='Enter')comment('${d.id}',this.value)">
-      `;
-      posts.appendChild(div);
+    snap.forEach(s=>{
+      const p = s.val();
+      db.ref("users/"+p.uid).once("value").then(u=>{
+        const liked = p.likes && p.likes[auth.currentUser.uid];
+        posts.innerHTML =
+        `<div class="post">
+          <b>@${u.val().name}</b>
+          <div>${p.text}</div>
+          <div class="small">
+            <button onclick="like('${s.key}')">${liked?"❤️":"🤍"} ${p.likes?Object.keys(p.likes).length:0}</button>
+            ${auth.currentUser.uid===ADMIN_UID?`<button class="admin" onclick="del('${s.key}')">Удалить</button>`:""}
+          </div>
+        </div>` + posts.innerHTML;
+      });
     });
   });
 }
 
-window.like=async(id)=>{
-  const ref=doc(db,"posts",id);
-  const uid=auth.currentUser.uid;
-  const snap=await getDoc(ref);
-  if(snap.data().likes.includes(uid))
-    await updateDoc(ref,{likes:arrayRemove(uid)});
-  else
-    await updateDoc(ref,{likes:arrayUnion(uid)});
+function like(id){
+  const uid = auth.currentUser.uid;
+  db.ref("posts/"+id+"/likes/"+uid).set(true);
 }
 
-window.comment=async(id,text)=>{
-  if(!text)return;
-  await addDoc(collection(db,"posts",id,"comments"),{
-    text,uid:auth.currentUser.uid
-  });
+function del(id){
+  db.ref("posts/"+id).remove();
 }
 </script>
+
 </body>
 </html>
