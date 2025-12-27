@@ -1,102 +1,364 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>sosiologe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .app {
-      background: #020617;
-      padding: 20px;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 360px;
-      box-shadow: 0 0 30px rgba(0,0,0,.6);
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 12px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #1d4ed8;
-    }
-    .result {
-      text-align: center;
-      font-size: 18px;
-      margin-top: 10px;
-      min-height: 24px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎄 Новогодний Конвертер Валют 🎄</title>
+    <style>
+        /* --- CSS: Новогодние Переменные Темы --- */
+        :root {
+            /* Светлая Новогодняя Тема */
+            --primary-color: #c0392b; /* Красный */
+            --bg-color: #ecf0f1;     /* Светло-серый снежный */
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;   /* Темно-серый */
+            --text-secondary: #95a5a6;
+            --border-color: #dcdde1;
+            --input-bg: #ffffff;
+            --shadow: 0 10px 30px rgba(0,0,0,0.15);
+            --hover-swap: #e74c3c;
+            --snow-color: #ecf0f1; /* Цвет снега для фона */
+            --accent-glow: 0 0 15px rgba(231, 76, 60, 0.6); /* Красное свечение */
+        }
+
+        body.dark-mode {
+            /* Темная Новогодняя Тема */
+            --primary-color: #27ae60; /* Зеленый */
+            --bg-color: #2c3e50;     /* Темно-синий/почти черный фон */
+            --card-bg: #34495e;      /* Темно-серый для карточки */
+            --text-color: #ecf0f1;
+            --text-secondary: #bdc3c7;
+            --border-color: #44607e;
+            --input-bg: #2d3e4f;
+            --shadow: 0 10px 30px rgba(0,0,0,0.4);
+            --hover-swap: #2ecc71;
+            --snow-color: #2d3e50; /* Темный снег для фона */
+            --accent-glow: 0 0 15px rgba(46, 204, 113, 0.6); /* Зеленое свечение */
+        }
+
+        /* Общие стили для плавных переходов */
+        body, .container, input, select, .swap-btn, td, .theme-toggle-btn {
+            transition: all 0.5s ease-in-out;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            position: relative;
+            overflow: hidden; /* Чтобы снежинки не создавали скроллбар */
+            background-image:
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.1"><circle cx="20" cy="20" r="10" fill="%23ccc" /><circle cx="80" cy="80" r="15" fill="%23ccc" /><circle cx="50" cy="50" r="8" fill="%23ccc" /></svg>'),
+                linear-gradient(to bottom, var(--snow-color) 0%, rgba(255,255,255,0) 100%);
+            background-size: 100px 100px, cover;
+            background-attachment: fixed;
+        }
+
+        /* --- Кнопка переключения темы --- */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+            z-index: 100; /* Поверх снежинок */
+            color: var(--primary-color);
+        }
+
+        .icon-sun, .icon-moon {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.3)); /* Тень для иконок */
+        }
+
+        /* Новогодние иконки (снежинка вместо солнца, звездочка вместо луны) */
+        .icon-sun { /* В светлой теме - снежинка */
+            color: #87CEEB; /* Светло-голубой */
+            opacity: 1; transform: scale(1) rotate(0deg);
+        }
+        .icon-moon { /* В темной теме - звездочка */
+            color: #FFD700; /* Золотой */
+            opacity: 0; transform: scale(0) rotate(180deg);
+        }
+
+        body.dark-mode .icon-sun { opacity: 0; transform: scale(0) rotate(-180deg); }
+        body.dark-mode .icon-moon { opacity: 1; transform: scale(1) rotate(0deg); }
+
+        /* --- Основной контейнер (карточка) --- */
+        .container {
+            background-color: var(--card-bg);
+            padding: 35px;
+            border-radius: 25px; /* Более мягкие углы */
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            position: relative; /* Для Z-index снежинок */
+            z-index: 10;
+            overflow: hidden; /* Обрезает снежинки, если они заходят за границы карточки */
+            border: 2px solid var(--primary-color); /* Новогодняя рамка */
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .currency-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        select, input {
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: 17px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        select { width: 38%; cursor: pointer; font-weight: bold; }
+        input { width: 55%; text-align: right; }
+        input:focus, select:focus { border-color: var(--primary-color); outline: none; box-shadow: var(--accent-glow); }
+
+        /* --- Выравнивание стрелочек --- */
+        .swap-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 20px 0; /* Увеличил отступы */
+        }
+
+        .swap-btn {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s;
+        }
+
+        .swap-btn:hover { transform: scale(1.15) rotate(360deg); background-color: var(--hover-swap); }
+        .swap-btn:active { transform: scale(0.9) rotate(180deg); } /* Легкое нажатие */
+
+        /* SVG стрелочки внутри кнопки */
+        .swap-btn svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .rate-info { margin: 25px 0; font-weight: bold; color: var(--primary-color); font-size: 16px; text-shadow: 0 0 5px rgba(0,0,0,0.1); }
+
+        /* --- Таблица курсов --- */
+        .rates-container { margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px; }
+        .rates-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .rates-table td {
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color); /* Пунктир для легкости */
+            color: var(--text-color);
+        }
+        .rates-table td:last-child { text-align: right; font-weight: bold; }
+        .curr-label { color: var(--primary-color); font-weight: bold; margin-right: 5px; }
+
+        /* --- Анимация снежинок --- */
+        .snowflake {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none; /* Чтобы снежинки не мешали кликать */
+            animation: fall linear forwards;
+            z-index: 1; /* Под основным контейнером */
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="light-mode">
 
-<div class="app">
-  <h1>sosiologe</h1>
+    <button class="theme-toggle-btn" id="theme-toggle" title="Переключить тему">
+        <svg class="icon-sun" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1s1-.45 1-1V3c0-.55-.45-1-1-1zM21 12c0-.55-.45-1-1-1h-1c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1zM4 12c0-.55-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1h1c.55 0 1-.45 1-1zM18.36 5.64c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l.71.71c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-.71-.71zM5.64 18.36c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l.71.71c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-.71-.71zM19.07 18.36c.39-.39.39-1.03 0-1.41l-.71-.71c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l.71.71c.39.39 1.03.39 1.41 0zM5.64 5.64c.39-.39.39-1.03 0-1.41l-.71-.71c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l.71.71zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/>
+        </svg>
+        <svg class="icon-moon" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+    </button>
 
-  <input id="amount" type="number" placeholder="Сумма" value="1" />
+    <div class="container">
+        <h1>🎄 Конвертер Валют 🎄</h1>
+        <p class="subtitle">Праздничный курс обмена</p>
 
-  <select id="from">
-    <option value="USD">USD</option>
-    <option value="EUR">EUR</option>
-    <option value="RUB">RUB</option>
-  </select>
+        <div class="currency-box">
+            <select id="currency-one">
+                <option value="USD" selected>USD</option>
+                <option value="EUR">EUR</option>
+                <option value="RUB">RUB</option>
+                <option value="KZT">KZT</option>
+                <option value="CNY">CNY</option>
+            </select>
+            <input type="number" id="amount-one" value="1" step="any">
+        </div>
 
-  <select id="to">
-    <option value="EUR">EUR</option>
-    <option value="USD">USD</option>
-    <option value="RUB">RUB</option>
-  </select>
+        <div class="swap-container">
+            <button class="swap-btn" id="swap" title="Поменять местами">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M7 20V4M7 4L3 8M7 4L11 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M17 4V20M17 20L13 16M17 20L21 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
 
-  <button onclick="convert()">Конвертировать</button>
+        <div class="currency-box">
+            <select id="currency-two">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="RUB" selected>RUB</option>
+                <option value="KZT">KZT</option>
+                <option value="CNY">CNY</option>
+            </select>
+            <input type="number" id="amount-two" placeholder="0" step="any">
+        </div>
 
-  <div class="result" id="result"></div>
-</div>
+        <div class="rate-info" id="rate">Загрузка данных...</div>
 
-<script>
-  async function convert() {
-    const amount = document.getElementById("amount").value;
-    const from = document.getElementById("from").value;
-    const to = document.getElementById("to").value;
-    const result = document.getElementById("result");
+        <div class="rates-container">
+            <table class="rates-table">
+                <tbody id="rates-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
 
-    result.textContent = "Загрузка...";
+    <script>
+        const themeBtn = document.getElementById('theme-toggle');
+        const body = document.body;
 
-    try {
-      const res = await fetch("https://api.exchangerate.host/latest?base=" + from);
-      const data = await res.json();
+        // --- 1. ЛОГИКА ТЕМЫ С СОХРАНЕНИЕМ ---
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+            body.classList.add('dark-mode');
+        }
 
-      const rate = data.rates[to];
-      const converted = (amount * rate).toFixed(2);
+        themeBtn.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const theme = body.classList.contains('dark-mode') ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+        });
 
-      result.textContent = `${amount} ${from} = ${converted} ${to}`;
-    } catch (e) {
-      result.textContent = "Ошибка загрузки курса";
-    }
-  }
-</script>
+        // --- 2. ЛОГИКА КОНВЕРТЕРА ---
+        const currencyOne = document.getElementById('currency-one');
+        const amountOne = document.getElementById('amount-one');
+        const currencyTwo = document.getElementById('currency-two');
+        const amountTwo = document.getElementById('amount-two');
+        const rateEl = document.getElementById('rate');
+        const swap = document.getElementById('swap');
+        const ratesTableBody = document.getElementById('rates-table-body');
 
+        function calculate() {
+            const curr1 = currencyOne.value;
+            const curr2 = currencyTwo.value;
+
+            fetch(`https://api.exchangerate-api.com/v4/latest/${curr1}`)
+                .then(res => res.json())
+                .then(data => {
+                    const rate = data.rates[curr2];
+                    
+                    rateEl.innerText = `1 ${curr1} = ${rate.toFixed(4)} ${curr2}`;
+                    amountTwo.value = (amountOne.value * rate).toFixed(2);
+                    
+                    const popular = ['USD', 'EUR', 'RUB', 'KZT', 'CNY'].filter(c => c !== curr1);
+                    ratesTableBody.innerHTML = '';
+                    popular.forEach(c => {
+                        const r = data.rates[c];
+                        const row = `
+                            <tr>
+                                <td>1 ${curr1}</td>
+                                <td>=</td>
+                                <td><span class="curr-label">${c}</span> ${r.toFixed(2)}</td>
+                            </tr>`;
+                        ratesTableBody.innerHTML += row;
+                    });
+                })
+                .catch(() => {
+                    rateEl.innerText = "Ошибка соединения";
+                });
+        }
+
+        currencyOne.addEventListener('change', calculate);
+        amountOne.addEventListener('input', calculate);
+        currencyTwo.addEventListener('change', calculate);
+        amountTwo.addEventListener('input', calculate);
+
+        swap.addEventListener('click', () => {
+            const temp = currencyOne.value;
+            currencyOne.value = currencyTwo.value;
+            currencyTwo.value = temp;
+            calculate();
+        });
+
+        calculate();
+
+        // --- 3. АНИМАЦИЯ СНЕЖИНОК ---
+        function createSnowflake() {
+            const snowflake = document.createElement('div');
+            snowflake.classList.add('snowflake');
+            document.body.appendChild(snowflake);
+
+            const size = Math.random() * 5 + 5; // От 5 до 10px
+            snowflake.style.width = `${size}px`;
+            snowflake.style.height = `${size}px`;
+            snowflake.style.left = `${Math.random() * 100}vw`; // Случайная позиция по горизонтали
+            snowflake.style.animationDuration = `${Math.random() * 10 + 5}s`; // Случайная скорость падения
+            snowflake.style.animationDelay = `${Math.random() * 5}s`; // Случайная задержка
+
+            snowflake.addEventListener('animationend', () => {
+                snowflake.remove(); // Удаляем снежинку после падения
+            });
+        }
+
+        // Создаем снежинки каждые 500мс
+        setInterval(createSnowflake, 500);
+
+    </script>
 </body>
 </html>
