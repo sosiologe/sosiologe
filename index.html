@@ -2,184 +2,188 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>sosiologe</title>
+<title>Sosiologe</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#0b0f1a;
-  color:white;
+body { margin:0; font-family:system-ui; background:#0f172a; color:white }
+.hidden { display:none }
+.container { max-width:600px; margin:auto; padding:16px }
+.card { background:#111827; border-radius:12px; padding:16px; margin-bottom:12px }
+input, button, textarea {
+  width:100%; padding:10px; margin-top:8px;
+  border-radius:8px; border:none;
 }
-.hidden{display:none}
-.card{
-  background:#11162a;
-  padding:16px;
-  border-radius:14px;
-  margin:12px;
-}
-input,button{
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:8px;
-  border:none;
-}
-button{background:#22c55e;font-weight:600}
-.red{background:#ef4444;color:white}
-.post{
-  background:#0f172a;
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-}
-img.avatar{
-  width:48px;
-  height:48px;
-  border-radius:50%;
-  object-fit:cover;
-}
-.small{opacity:.6;font-size:12px}
+button { background:#22c55e; font-weight:600 }
+.red { background:#ef4444; color:white }
+.post { border-top:1px solid #1f2937; padding-top:10px; margin-top:10px }
+.small { font-size:12px; opacity:.6 }
+.avatar { width:40px; height:40px; border-radius:50%; object-fit:cover }
+.row { display:flex; gap:10px; align-items:center }
+.like { cursor:pointer }
 </style>
 </head>
 
 <body>
+
+<div class="container">
 
 <!-- AUTH -->
 <div id="auth" class="card">
   <h2>Вход</h2>
   <input id="email" placeholder="Email">
   <input id="password" type="password" placeholder="Пароль">
+  <input id="nameReg" placeholder="Имя (для регистрации)">
   <button onclick="login()">Войти</button>
-  <button onclick="showReg()">Регистрация</button>
-  <div class="small" id="authStatus"></div>
-</div>
-
-<!-- REG -->
-<div id="reg" class="card hidden">
-  <h2>Регистрация</h2>
-  <input id="regName" placeholder="Имя">
-  <input id="regEmail" placeholder="Email">
-  <input id="regPassword" type="password" placeholder="Пароль">
-  <button onclick="register()">Создать аккаунт</button>
-  <button class="red" onclick="hideReg()">Назад</button>
+  <button onclick="register()">Регистрация</button>
+  <div id="authError" class="small"></div>
 </div>
 
 <!-- APP -->
 <div id="app" class="hidden">
 
+<!-- PROFILE -->
 <div class="card">
-  <h3>Профиль</h3>
-  <img id="avatarImg" class="avatar" src="https://i.imgur.com/8Km9tLL.png">
+  <div class="row">
+    <img id="avatarImg" class="avatar">
+    <div>
+      <b id="username"></b><br>
+      <span class="small" id="uid"></span>
+    </div>
+  </div>
   <input id="avatar" placeholder="URL аватарки">
-  <button onclick="saveProfile()">Сохранить</button>
+  <button onclick="saveProfile()">Сохранить профиль</button>
   <button class="red" onclick="logout()">Выйти</button>
 </div>
 
+<!-- NEW POST -->
 <div class="card">
-  <h3>Новый пост</h3>
-  <input id="postText" placeholder="Что нового?">
+  <textarea id="postText" placeholder="Что нового?"></textarea>
   <button onclick="addPost()">Опубликовать</button>
 </div>
 
+<!-- FEED -->
 <div class="card">
   <h3>Лента</h3>
   <div id="feed"></div>
 </div>
 
 </div>
+</div>
 
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {getDatabase,ref,set,push,onValue,update,remove,get} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword,
+  signInWithEmailAndPassword, onAuthStateChanged, signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getDatabase, ref, set, push, onValue, update, get
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const ADMIN_UID="fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
+const ADMIN_UID = "fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
 
-const firebaseConfig={
-apiKey:"AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
-authDomain:"sosiologe.firebaseapp.com",
-databaseURL:"https://sosiologe-default-rtdb.firebaseio.com",
-projectId:"sosiologe",
-storageBucket:"sosiologe.firebasestorage.app",
-messagingSenderId:"651066103994",
-appId:"1:651066103994:web:13f35d4e31bba79c160a83"
+const firebaseConfig = {
+  apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
+  authDomain: "sosiologe.firebaseapp.com",
+  databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
+  projectId: "sosiologe",
+  storageBucket: "sosiologe.firebasestorage.app",
+  messagingSenderId: "651066103994",
+  appId: "1:651066103994:web:13f35d4e31bba79c160a83"
 };
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-window.showReg=()=>{auth.classList.add("hidden");reg.classList.remove("hidden")}
-window.hideReg=()=>{reg.classList.add("hidden");auth.classList.remove("hidden")}
+const authBox = document.getElementById("auth");
+const appBox = document.getElementById("app");
 
-window.register=()=>{
-createUserWithEmailAndPassword(auth,regEmail.value,regPassword.value).then(r=>{
-set(ref(db,"users/"+r.user.uid),{
-name:regName.value,
-avatar:"",
-banned:false
-});
-});
+window.register = () => {
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .then(r => {
+      set(ref(db, "users/" + r.user.uid), {
+        name: nameReg.value || "Без имени",
+        avatar: "https://i.imgur.com/8Km9tLL.png"
+      });
+    })
+    .catch(e => authError.textContent = e.message);
 };
 
-window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value)
-.catch(e=>authStatus.textContent=e.message);
-
-window.logout=()=>signOut(auth);
-
-window.saveProfile=()=>{
-const u=auth.currentUser;
-update(ref(db,"users/"+u.uid),{avatar:avatar.value});
-avatarImg.src=avatar.value;
+window.login = () => {
+  signInWithEmailAndPassword(auth, email.value, password.value)
+    .catch(e => authError.textContent = e.message);
 };
 
-window.addPost=()=>{
-const u=auth.currentUser;
-push(ref(db,"posts"),{
-uid:u.uid,
-text:postText.value,
-time:Date.now(),
-likes:{}
-});
-postText.value="";
+window.logout = () => signOut(auth);
+
+window.saveProfile = () => {
+  const u = auth.currentUser;
+  update(ref(db, "users/" + u.uid), {
+    avatar: avatar.value
+  });
 };
 
-onAuthStateChanged(auth,u=>{
-if(!u){auth.classList.remove("hidden");app.classList.add("hidden");return;}
-auth.classList.add("hidden");reg.classList.add("hidden");app.classList.remove("hidden");
-
-get(ref(db,"users/"+u.uid)).then(s=>{
-if(s.val()?.banned){alert("Вы заблокированы");signOut(auth);}
-avatarImg.src=s.val()?.avatar||avatarImg.src;
-});
-});
-
-onValue(ref(db,"posts"),s=>{
-feed.innerHTML="";
-s.forEach(p=>{
-const d=p.val();
-const id=p.key;
-feed.innerHTML+=`
-<div class="post">
-<b>${d.text}</b>
-<div class="small">
-❤️ ${d.likes?Object.keys(d.likes).length:0}
-<button onclick="like('${id}')">Лайк</button>
-${auth.currentUser?.uid===ADMIN_UID?`<button onclick="delPost('${id}')">❌</button>`:""}
-</div>
-</div>`;
-});
-});
-
-window.like=id=>{
-const u=auth.currentUser;
-update(ref(db,"posts/"+id+"/likes/"+u.uid),true);
+window.addPost = () => {
+  const u = auth.currentUser;
+  push(ref(db, "posts"), {
+    uid: u.uid,
+    text: postText.value,
+    time: Date.now(),
+    likes: {}
+  });
+  postText.value = "";
 };
 
-window.delPost=id=>{
-remove(ref(db,"posts/"+id));
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    authBox.classList.remove("hidden");
+    appBox.classList.add("hidden");
+    return;
+  }
+
+  authBox.classList.add("hidden");
+  appBox.classList.remove("hidden");
+
+  uid.textContent = user.uid;
+
+  get(ref(db, "users/" + user.uid)).then(s => {
+    const d = s.val();
+    username.textContent = d.name;
+    avatarImg.src = d.avatar;
+  });
+
+  onValue(ref(db, "posts"), snap => {
+    feed.innerHTML = "";
+    snap.forEach(p => {
+      const post = p.val();
+      const liked = post.likes && post.likes[user.uid];
+      feed.innerHTML += `
+        <div class="post">
+          <div>${post.text}</div>
+          <div class="small">
+            <span class="like" onclick="toggleLike('${p.key}')">
+              ❤️ ${post.likes ? Object.keys(post.likes).length : 0}
+            </span>
+            ${user.uid === ADMIN_UID ? `<button onclick="delPost('${p.key}')">🗑</button>` : ""}
+          </div>
+        </div>`;
+    });
+  });
+});
+
+window.toggleLike = id => {
+  const u = auth.currentUser;
+  const likeRef = ref(db, "posts/" + id + "/likes/" + u.uid);
+  get(likeRef).then(s => {
+    if (s.exists()) set(likeRef, null);
+    else set(likeRef, true);
+  });
+};
+
+window.delPost = id => {
+  set(ref(db, "posts/" + id), null);
 };
 </script>
 
