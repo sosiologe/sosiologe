@@ -5,165 +5,162 @@
 <title>sosiologe</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: system-ui;
   background: #0b0f1a;
   color: white;
 }
-
-.hidden { display: none; }
-
-.center {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0,0,0,.7);
-}
-
-.card {
-  background: #121a2f;
+.container {
+  max-width: 420px;
+  margin: auto;
   padding: 20px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 360px;
 }
-
-input, button {
+h1 {
+  text-align: center;
+}
+.card {
+  background: #11162a;
+  padding: 16px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: none;
+}
+button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: none;
-}
-
-button {
-  background: #00ff88;
-  font-size: 16px;
-}
-
-.logout {
-  background: #ff5555;
-}
-
-header {
-  padding: 15px;
-  text-align: right;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #00ff88;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  background: #22c55e;
   font-weight: bold;
+}
+canvas {
+  margin-top: 20px;
+}
+small {
+  opacity: .6;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🔐 ВХОД -->
-<div id="auth" class="center">
+<div class="container">
+  <h1>sosiologe</h1>
+
   <div class="card">
-    <h2>Вход / Регистрация</h2>
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Пароль">
-    <button onclick="login()">Войти</button>
-    <button onclick="register()">Регистрация</button>
+    <input id="amount" type="number" placeholder="Сумма" value="1">
+
+    <select id="from">
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+      <option value="RUB">RUB</option>
+      <option value="BTC">BTC</option>
+      <option value="ETH">ETH</option>
+    </select>
+
+    <select id="to">
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
+      <option value="RUB">RUB</option>
+      <option value="BTC">BTC</option>
+      <option value="ETH">ETH</option>
+    </select>
+
+    <button onclick="convert()">Конвертировать</button>
+
+    <h2 id="result"></h2>
+    <small id="rateInfo"></small>
+  </div>
+
+  <div class="card">
+    <h3>График курса</h3>
+    <canvas id="chart"></canvas>
   </div>
 </div>
 
-<!-- 🌍 САЙТ -->
-<div id="app" class="hidden">
-  <header>
-    <div class="avatar" onclick="openProfile()">👤</div>
-  </header>
-  <h1 style="text-align:center">sosiologe</h1>
-  <p style="text-align:center">Конвертация валют (дальше добавим)</p>
-</div>
+<script>
+let rates = {};
+let chart;
 
-<!-- 👤 ПРОФИЛЬ -->
-<div id="profile" class="center hidden">
-  <div class="card">
-    <h2>Профиль</h2>
-    <input id="name" placeholder="Имя">
-    <input id="avatar" placeholder="URL аватарки">
-    <button onclick="saveProfile()">Сохранить</button>
-    <button class="logout" onclick="logout()">Выйти</button>
-  </div>
-</div>
+async function loadRates() {
+  // обычные валюты
+  const fx = await fetch("https://api.exchangerate.host/latest?base=USD").then(r => r.json());
+  rates = fx.rates;
+  rates.USD = 1;
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  // крипта
+  const crypto = await fetch(
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
+  ).then(r => r.json());
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
-  authDomain: "sosiologe.firebaseapp.com",
-  databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
-  projectId: "sosiologe",
-  storageBucket: "sosiologe.firebasestorage.app",
-  messagingSenderId: "651066103994",
-  appId: "1:651066103994:web:13f35d4e31bba79c160a83"
-};
+  rates.BTC = crypto.bitcoin.usd;
+  rates.ETH = crypto.ethereum.usd;
+}
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+function convert() {
+  const amount = +amountInput.value;
+  const from = fromSelect.value;
+  const to = toSelect.value;
 
-const authBox = document.getElementById("auth");
-const appBox = document.getElementById("app");
-const profileBox = document.getElementById("profile");
+  const usdAmount = from === "BTC" || from === "ETH"
+    ? amount * rates[from]
+    : amount / rates[from];
 
-onAuthStateChanged(auth, user => {
-  if (user) {
-    authBox.classList.add("hidden");
-    appBox.classList.remove("hidden");
-  } else {
-    authBox.classList.remove("hidden");
-    appBox.classList.add("hidden");
+  const resultValue = to === "BTC" || to === "ETH"
+    ? usdAmount / rates[to]
+    : usdAmount * rates[to];
+
+  result.textContent = resultValue.toFixed(6);
+  rateInfo.textContent = `Курс: 1 ${from} = ${(resultValue/amount).toFixed(6)} ${to}`;
+
+  drawChart(from, to);
+}
+
+async function drawChart(from, to) {
+  const data = [];
+  const labels = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    labels.push(date.toLocaleDateString());
+    data.push(Math.random() * 10 + 50); // упрощённый график
   }
-});
 
-window.login = () => {
-  signInWithEmailAndPassword(auth, email.value, password.value)
-    .catch(e => alert(e.message));
-};
+  if (chart) chart.destroy();
 
-window.register = () => {
-  createUserWithEmailAndPassword(auth, email.value, password.value)
-    .catch(e => alert(e.message));
-};
+  chart = new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: `${from} → ${to}`,
+        data,
+        borderWidth: 2
+      }]
+    }
+  });
+}
 
-window.openProfile = () => {
-  profileBox.classList.remove("hidden");
-};
+const amountInput = document.getElementById("amount");
+const fromSelect = document.getElementById("from");
+const toSelect = document.getElementById("to");
+const result = document.getElementById("result");
+const rateInfo = document.getElementById("rateInfo");
 
-window.saveProfile = () => {
-  const user = auth.currentUser;
-  set(ref(db, "users/" + user.uid), {
-    name: name.value,
-    avatar: avatar.value
-  }).then(() => alert("Сохранено ✅"));
-};
-
-window.logout = () => {
-  signOut(auth);
-};
+loadRates();
+setInterval(loadRates, 5 * 60 * 1000); // автообновление
 </script>
 
 </body>
