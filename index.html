@@ -2,54 +2,48 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>sosiologe</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sosiologe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#e5e7eb}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;background:#020617}
-button{background:#2563eb;color:#fff;border:none;padding:8px 12px;border-radius:6px}
-input,textarea{width:100%;padding:8px;margin:5px 0;border-radius:6px;border:none}
-.post{background:#020617;padding:10px;border-radius:10px;margin:10px 0}
-img{max-width:100%;border-radius:10px}
-.hidden{display:none}
+body{margin:0;font-family:Arial;background:#f2f2f2}
+header{background:#111;color:#fff;padding:10px;display:flex;justify-content:space-between}
+button{padding:6px 10px;margin:5px}
+#auth,#app{max-width:600px;margin:auto;padding:10px}
+.post{background:#fff;margin:10px 0;padding:10px;border-radius:6px}
+.post img{max-width:100%;border-radius:6px}
+.comment{font-size:14px;margin-left:10px}
+.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover}
 </style>
 </head>
 <body>
 
 <header>
-<b>sosiologe</b>
-<button id="profileBtn">Профиль</button>
+  <div>Sosiologe</div>
+  <button onclick="logout()">Выйти</button>
 </header>
 
 <div id="auth">
-<h3>Вход / Регистрация</h3>
-<input id="name" placeholder="Имя (для регистрации)">
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Пароль">
-<button onclick="login()">Войти</button>
-<button onclick="register()">Регистрация</button>
+  <h3>Вход / Регистрация</h3>
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Пароль"><br>
+  <input id="name" placeholder="Имя"><br>
+  <button onclick="register()">Регистрация</button>
+  <button onclick="login()">Вход</button>
 </div>
 
-<div id="app" class="hidden">
-<h3>Создать пост</h3>
-<textarea id="postText" placeholder="Что нового?"></textarea>
-<input id="postImg" placeholder="Ссылка на картинку (необязательно)">
-<button onclick="addPost()">Опубликовать</button>
-<div id="posts"></div>
-</div>
+<div id="app" style="display:none">
+  <h3>Создать пост</h3>
+  <input id="postText" placeholder="Текст"><br>
+  <input id="postImg" placeholder="Ссылка на картинку"><br>
+  <button onclick="addPost()">Опубликовать</button>
 
-<div id="profile" class="hidden">
-<h3>Профиль</h3>
-<input id="profName" placeholder="Имя">
-<input id="profAva" placeholder="Аватар (URL)">
-<button onclick="saveProfile()">Сохранить</button>
-<button onclick="logout()">Выйти</button>
+  <div id="posts"></div>
 </div>
 
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import {getDatabase,ref,push,set,onValue,remove,update} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {getDatabase,ref,set,push,onValue,update} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
@@ -61,92 +55,68 @@ const firebaseConfig = {
   appId: "1:651066103994:web:13f35d4e31bba79c160a83"
 };
 
-const ADMIN_UID = "fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const db = getDatabase();
 
-const authBox=document.getElementById("auth");
-const appBox=document.getElementById("app");
-const profileBox=document.getElementById("profile");
-const postsBox=document.getElementById("posts");
+window.register = ()=>{
+  createUserWithEmailAndPassword(auth,email.value,password.value)
+  .then(r=>{
+    set(ref(db,"users/"+r.user.uid),{name:name.value});
+  });
+}
 
-onAuthStateChanged(auth,user=>{
- if(user){
-  authBox.classList.add("hidden");
-  appBox.classList.remove("hidden");
-  loadPosts();
- }else{
-  authBox.classList.remove("hidden");
-  appBox.classList.add("hidden");
- }
+window.login = ()=>{
+  signInWithEmailAndPassword(auth,email.value,password.value);
+}
+
+window.logout = ()=>signOut(auth);
+
+onAuthStateChanged(auth,u=>{
+  if(u){
+    authDiv.style.display="none";
+    appDiv.style.display="block";
+    loadPosts();
+  }else{
+    authDiv.style.display="block";
+    appDiv.style.display="none";
+  }
 });
 
-window.register=()=>{
- createUserWithEmailAndPassword(auth,email.value,pass.value)
- .then(r=>set(ref(db,"users/"+r.user.uid),{
-  name:name.value||"Без имени",
-  avatar:"",
-  banned:false
- }));
-}
-
-window.login=()=>{
- signInWithEmailAndPassword(auth,email.value,pass.value);
-}
-
-window.logout=()=>signOut(auth);
+const authDiv=document.getElementById("auth");
+const appDiv=document.getElementById("app");
 
 window.addPost=()=>{
- const u=auth.currentUser;
- if(!u)return;
- push(ref(db,"posts"),{
-  uid:u.uid,
-  text:postText.value,
-  img:postImg.value,
-  likes:{},
-  time:Date.now()
- });
- postText.value="";postImg.value="";
+  const p=push(ref(db,"posts"));
+  set(p,{
+    text:postText.value,
+    img:postImg.value,
+    uid:auth.currentUser.uid,
+    likes:{}
+  });
 }
 
 function loadPosts(){
- onValue(ref(db,"posts"),snap=>{
-  postsBox.innerHTML="";
-  snap.forEach(p=>{
-   const d=p.val();
-   const div=document.createElement("div");
-   div.className="post";
-   div.innerHTML=`
-    <p>${d.text}</p>
-    ${d.img?`<img src="${d.img}">`:""}
-    <button onclick="like('${p.key}')">❤️ ${d.likes?Object.keys(d.likes).length:0}</button>
-    ${auth.currentUser.uid===ADMIN_UID?`<button onclick="del('${p.key}')">🗑</button>`:""}
-   `;
-   postsBox.prepend(div);
+  onValue(ref(db,"posts"),s=>{
+    posts.innerHTML="";
+    s.forEach(p=>{
+      const d=p.val();
+      const liked=d.likes&&d.likes[auth.currentUser.uid];
+      posts.innerHTML+=`
+      <div class="post">
+        <p>${d.text}</p>
+        ${d.img?`<img src="${d.img}">`:""}
+        <button onclick="like('${p.key}')">
+          ❤️ ${d.likes?Object.keys(d.likes).length:0}
+        </button>
+      </div>`;
+    });
   });
- });
 }
 
 window.like=id=>{
- const u=auth.currentUser;
- update(ref(db,"posts/"+id+"/likes/"+u.uid),true);
-}
-
-window.del=id=>remove(ref(db,"posts/"+id));
-
-profileBtn.onclick=()=>{
- appBox.classList.add("hidden");
- profileBox.classList.remove("hidden");
-}
-
-window.saveProfile=()=>{
- const u=auth.currentUser;
- update(ref(db,"users/"+u.uid),{
-  name:profName.value,
-  avatar:profAva.value
- });
+  const r=ref(db,"posts/"+id+"/likes/"+auth.currentUser.uid);
+  set(r,true);
 }
 </script>
 </body>
