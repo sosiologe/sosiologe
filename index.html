@@ -1,144 +1,101 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>sosiologe</title>
-<style>
-body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#020617}
-button{background:#2563eb;border:none;color:#fff;padding:6px 10px;border-radius:6px}
-input,textarea{width:100%;margin:4px 0;padding:6px;border-radius:6px;border:none}
-#auth,#app,#profile,#admin{display:none;padding:15px}
-.post{background:#020617;margin:8px 0;padding:10px;border-radius:8px}
-small{color:#94a3b8}
-.like{cursor:pointer;color:#38bdf8}
-.comment{margin-left:10px;font-size:14px}
-</style>
+  <meta charset="UTF-8" />
+  <title>sosiologe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .app {
+      background: #020617;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 0 30px rgba(0,0,0,.6);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .result {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 10px;
+      min-height: 24px;
+    }
+  </style>
 </head>
 <body>
 
-<header>
-<b>sosiologe</b>
-<button onclick="openProfile()">👤</button>
-</header>
+<div class="app">
+  <h1>sosiologe</h1>
 
-<div id="auth">
-<h3>Вход / Регистрация</h3>
-<input id="login" placeholder="Логин">
-<input id="name" placeholder="Имя">
-<input id="pass" type="password" placeholder="Пароль">
-<button onclick="register()">Регистрация</button>
-<button onclick="loginUser()">Вход</button>
-</div>
+  <input id="amount" type="number" placeholder="Сумма" value="1" />
 
-<div id="app">
-<textarea id="postText" placeholder="Что нового?"></textarea>
-<button onclick="addPost()">Опубликовать</button>
-<div id="posts"></div>
-</div>
+  <select id="from">
+    <option value="USD">USD</option>
+    <option value="EUR">EUR</option>
+    <option value="RUB">RUB</option>
+  </select>
 
-<div id="profile">
-<h3>Профиль</h3>
-<input id="pname">
-<input id="pavatar" placeholder="URL аватарки">
-<button onclick="saveProfile()">Сохранить</button>
-<button onclick="logout()">Выйти</button>
-</div>
+  <select id="to">
+    <option value="EUR">EUR</option>
+    <option value="USD">USD</option>
+    <option value="RUB">RUB</option>
+  </select>
 
-<div id="admin">
-<h3>Админ панель</h3>
-<div id="users"></div>
+  <button onclick="convert()">Конвертировать</button>
+
+  <div class="result" id="result"></div>
 </div>
 
 <script>
-let users=JSON.parse(localStorage.users||"{}");
-let posts=JSON.parse(localStorage.posts||"[]");
-let current=localStorage.current||null;
+  async function convert() {
+    const amount = document.getElementById("amount").value;
+    const from = document.getElementById("from").value;
+    const to = document.getElementById("to").value;
+    const result = document.getElementById("result");
 
-function save(){localStorage.users=JSON.stringify(users);localStorage.posts=JSON.stringify(posts)}
+    result.textContent = "Загрузка...";
 
-function show(id){
-["auth","app","profile","admin"].forEach(x=>document.getElementById(x).style.display="none");
-document.getElementById(id).style.display="block";
-}
+    try {
+      const res = await fetch("https://api.exchangerate.host/latest?base=" + from);
+      const data = await res.json();
 
-function register(){
-let l=login.value,p=pass.value,n=name.value;
-if(users[l])return alert("Уже есть");
-users[l]={pass:p,name:n,avatar:"",banned:false};
-save();alert("Готово");
-}
+      const rate = data.rates[to];
+      const converted = (amount * rate).toFixed(2);
 
-function loginUser(){
-let l=login.value,p=pass.value;
-if(!users[l]||users[l].pass!=p)return alert("Ошибка");
-if(users[l].banned)return alert("Вы забанены");
-current=l;localStorage.current=l;
-render();
-}
-
-function logout(){localStorage.current=null;location.reload()}
-
-function render(){
-show("app");
-if(current==="admin")show("admin");
-drawPosts();
-}
-
-function addPost(){
-posts.push({text:postText.value,user:current,likes:[],comments:[],time:Date.now()});
-postText.value="";save();drawPosts();
-}
-
-function drawPosts(){
-posts.sort((a,b)=>b.time-a.time);
-postsEl=document.getElementById("posts");
-postsEl.innerHTML="";
-posts.forEach((p,i)=>{
-let d=document.createElement("div");d.className="post";
-d.innerHTML=`<b>${users[p.user].name}</b><br>${p.text}
-<br><span class="like" onclick="like(${i})">❤️ ${p.likes.length}</span>
-${p.user===current||current==="admin"?`<button onclick="del(${i})">❌</button>`:""}
-<div>${p.comments.map(c=>`<div class="comment"><b>${users[c.u].name}:</b> ${c.t}</div>`).join("")}</div>
-<input placeholder="Комментарий" onkeydown="if(event.key==='Enter')comment(${i},this.value,this)">
-`;
-postsEl.appendChild(d);
-});
-}
-
-function like(i){
-let p=posts[i];
-if(!p.likes.includes(current))p.likes.push(current);
-save();drawPosts();
-}
-
-function comment(i,t,el){
-posts[i].comments.push({u:current,t});el.value="";save();drawPosts();
-}
-
-function del(i){posts.splice(i,1);save();drawPosts()}
-
-function openProfile(){
-show("profile");
-pname.value=users[current].name;
-pavatar.value=users[current].avatar;
-}
-
-function saveProfile(){
-users[current].name=pname.value;
-users[current].avatar=pavatar.value;
-save();alert("Сохранено");
-}
-
-if(current)render();else show("auth");
-
-if(current==="admin"){
-let u=document.getElementById("users");
-u.innerHTML=Object.keys(users).map(x=>`
-<div>${x} ${users[x].banned?"❌":""}
-<button onclick="users['${x}'].banned=!users['${x}'].banned;save();location.reload()">Бан</button>
-</div>`).join("");
-}
+      result.textContent = `${amount} ${from} = ${converted} ${to}`;
+    } catch (e) {
+      result.textContent = "Ошибка загрузки курса";
+    }
+  }
 </script>
 
 </body>
