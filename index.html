@@ -4,123 +4,141 @@
 <meta charset="UTF-8">
 <title>sosiologe</title>
 <style>
-body { font-family: Arial; background:#0f172a; color:white; margin:0 }
-header { padding:10px; background:#020617; display:flex; justify-content:space-between }
-button { padding:6px 10px; margin:3px }
-input, textarea { width:100%; padding:6px; margin:5px 0 }
-.post { background:#020617; padding:10px; margin:10px; border-radius:6px }
-.small { font-size:12px; opacity:.7 }
-.hidden { display:none }
+body{margin:0;font-family:Arial;background:#0f172a;color:#fff}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#020617}
+button{background:#2563eb;border:none;color:#fff;padding:6px 10px;border-radius:6px}
+input,textarea{width:100%;margin:4px 0;padding:6px;border-radius:6px;border:none}
+#auth,#app,#profile,#admin{display:none;padding:15px}
+.post{background:#020617;margin:8px 0;padding:10px;border-radius:8px}
+small{color:#94a3b8}
+.like{cursor:pointer;color:#38bdf8}
+.comment{margin-left:10px;font-size:14px}
 </style>
 </head>
 <body>
 
 <header>
-  <b>sosiologe</b>
-  <button onclick="openProfile()">👤</button>
+<b>sosiologe</b>
+<button onclick="openProfile()">👤</button>
 </header>
 
 <div id="auth">
-  <h3>Вход / Регистрация</h3>
-  <input id="login" placeholder="Логин">
-  <input id="password" type="password" placeholder="Пароль">
-  <button onclick="login()">Войти</button>
-  <button onclick="register()">Регистрация</button>
+<h3>Вход / Регистрация</h3>
+<input id="login" placeholder="Логин">
+<input id="name" placeholder="Имя">
+<input id="pass" type="password" placeholder="Пароль">
+<button onclick="register()">Регистрация</button>
+<button onclick="loginUser()">Вход</button>
 </div>
 
-<div id="app" class="hidden">
-  <h3>Новый пост</h3>
-  <textarea id="postText" placeholder="Что нового?"></textarea>
-  <button onclick="addPost()">Опубликовать</button>
-  <div id="posts"></div>
+<div id="app">
+<textarea id="postText" placeholder="Что нового?"></textarea>
+<button onclick="addPost()">Опубликовать</button>
+<div id="posts"></div>
 </div>
 
-<div id="profile" class="hidden">
-  <h3>Профиль</h3>
-  <p id="profileName"></p>
-  <button onclick="logout()">Выйти</button>
-  <button onclick="closeProfile()">Назад</button>
+<div id="profile">
+<h3>Профиль</h3>
+<input id="pname">
+<input id="pavatar" placeholder="URL аватарки">
+<button onclick="saveProfile()">Сохранить</button>
+<button onclick="logout()">Выйти</button>
+</div>
+
+<div id="admin">
+<h3>Админ панель</h3>
+<div id="users"></div>
 </div>
 
 <script>
-let users = JSON.parse(localStorage.getItem("users")||"{}")
-let posts = JSON.parse(localStorage.getItem("posts")||"[]")
-let currentUser = localStorage.getItem("user")
+let users=JSON.parse(localStorage.users||"{}");
+let posts=JSON.parse(localStorage.posts||"[]");
+let current=localStorage.current||null;
 
-function save(){ 
-  localStorage.setItem("users",JSON.stringify(users))
-  localStorage.setItem("posts",JSON.stringify(posts))
+function save(){localStorage.users=JSON.stringify(users);localStorage.posts=JSON.stringify(posts)}
+
+function show(id){
+["auth","app","profile","admin"].forEach(x=>document.getElementById(x).style.display="none");
+document.getElementById(id).style.display="block";
 }
 
 function register(){
-  let l=login.value,p=password.value
-  if(users[l]) return alert("Уже есть")
-  users[l]={password:p}
-  save()
-  alert("Готово, входи")
+let l=login.value,p=pass.value,n=name.value;
+if(users[l])return alert("Уже есть");
+users[l]={pass:p,name:n,avatar:"",banned:false};
+save();alert("Готово");
 }
 
-function login(){
-  let l=login.value,p=password.value
-  if(!users[l]||users[l].password!==p) return alert("Ошибка")
-  currentUser=l
-  localStorage.setItem("user",l)
-  start()
+function loginUser(){
+let l=login.value,p=pass.value;
+if(!users[l]||users[l].pass!=p)return alert("Ошибка");
+if(users[l].banned)return alert("Вы забанены");
+current=l;localStorage.current=l;
+render();
 }
 
-function logout(){
-  localStorage.removeItem("user")
-  location.reload()
-}
+function logout(){localStorage.current=null;location.reload()}
 
-function start(){
-  auth.classList.add("hidden")
-  app.classList.remove("hidden")
-  render()
+function render(){
+show("app");
+if(current==="admin")show("admin");
+drawPosts();
 }
 
 function addPost(){
-  posts.push({user:currentUser,text:postText.value,likes:[],comments:[]})
-  postText.value=""
-  save(); render()
+posts.push({text:postText.value,user:current,likes:[],comments:[],time:Date.now()});
+postText.value="";save();drawPosts();
+}
+
+function drawPosts(){
+posts.sort((a,b)=>b.time-a.time);
+postsEl=document.getElementById("posts");
+postsEl.innerHTML="";
+posts.forEach((p,i)=>{
+let d=document.createElement("div");d.className="post";
+d.innerHTML=`<b>${users[p.user].name}</b><br>${p.text}
+<br><span class="like" onclick="like(${i})">❤️ ${p.likes.length}</span>
+${p.user===current||current==="admin"?`<button onclick="del(${i})">❌</button>`:""}
+<div>${p.comments.map(c=>`<div class="comment"><b>${users[c.u].name}:</b> ${c.t}</div>`).join("")}</div>
+<input placeholder="Комментарий" onkeydown="if(event.key==='Enter')comment(${i},this.value,this)">
+`;
+postsEl.appendChild(d);
+});
 }
 
 function like(i){
-  let p=posts[i]
-  if(!p.likes.includes(currentUser)) p.likes.push(currentUser)
-  save(); render()
+let p=posts[i];
+if(!p.likes.includes(current))p.likes.push(current);
+save();drawPosts();
 }
 
-function comment(i){
-  let c=prompt("Комментарий")
-  if(c){ posts[i].comments.push({u:currentUser,t:c}); save(); render() }
+function comment(i,t,el){
+posts[i].comments.push({u:current,t});el.value="";save();drawPosts();
 }
 
-function render(){
-  postsDiv=posts.map((p,i)=>`
-    <div class="post">
-      <b>${p.user}</b>
-      <p>${p.text}</p>
-      <button onclick="like(${i})">❤️ ${p.likes.length}</button>
-      <button onclick="comment(${i})">💬</button>
-      ${p.comments.map(c=>`<div class="small">${c.u}: ${c.t}</div>`).join("")}
-    </div>
-  `).reverse().join("")
-  posts.innerHTML=postsDiv
-}
+function del(i){posts.splice(i,1);save();drawPosts()}
 
 function openProfile(){
-  profile.classList.remove("hidden")
-  app.classList.add("hidden")
-  profileName.innerText="Логин: "+currentUser
+show("profile");
+pname.value=users[current].name;
+pavatar.value=users[current].avatar;
 }
 
-function closeProfile(){
-  profile.classList.add("hidden")
-  app.classList.remove("hidden")
+function saveProfile(){
+users[current].name=pname.value;
+users[current].avatar=pavatar.value;
+save();alert("Сохранено");
 }
 
-if(currentUser) start()
+if(current)render();else show("auth");
+
+if(current==="admin"){
+let u=document.getElementById("users");
+u.innerHTML=Object.keys(users).map(x=>`
+<div>${x} ${users[x].banned?"❌":""}
+<button onclick="users['${x}'].banned=!users['${x}'].banned;save();location.reload()">Бан</button>
+</div>`).join("");
+}
 </script>
 
 </body>
