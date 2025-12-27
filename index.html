@@ -1,172 +1,153 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>sosiologe</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-<style>
-body{margin:0;font-family:sans-serif;background:#0f0f12;color:#fff}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px;background:#18181f}
-button{background:#4f46e5;border:none;color:#fff;padding:8px 12px;border-radius:6px}
-input,textarea{width:100%;padding:8px;margin:4px 0;border-radius:6px;border:none}
-.card{background:#18181f;padding:10px;border-radius:10px;margin:10px}
-.post img{max-width:100%;border-radius:10px;margin-top:5px}
-.hidden{display:none}
-small{color:#aaa}
-.like{cursor:pointer}
-.admin{color:#f87171}
-</style>
+  <meta charset="UTF-8">
+  <title>Sosiologe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    body { margin:0;font-family:sans-serif;background:#0f172a;color:#fff }
+    header { display:flex;justify-content:space-between;align-items:center;padding:10px;background:#020617 }
+    button { padding:8px 12px;border:none;border-radius:6px;background:#38bdf8;color:#000 }
+    input,textarea { width:100%;margin:5px 0;padding:8px;border-radius:6px;border:none }
+    .container { padding:15px;max-width:600px;margin:auto }
+    .post { background:#020617;padding:10px;margin:10px 0;border-radius:8px }
+    .hidden { display:none }
+    img { max-width:100%;border-radius:6px }
+  </style>
 </head>
-
 <body>
 
 <header>
   <b>sosiologe</b>
-  <img id="avatarBtn" src="" width="40" height="40" style="border-radius:50%;display:none;cursor:pointer">
+  <button id="logoutBtn" class="hidden">Выйти</button>
 </header>
 
-<!-- AUTH -->
-<div id="auth" class="card">
-  <h3>Вход / Регистрация</h3>
-  <input id="name" placeholder="Имя (для регистрации)">
-  <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Пароль">
-  <button onclick="register()">Регистрация</button>
-  <button onclick="login()">Вход</button>
-</div>
+<div class="container">
 
-<!-- APP -->
-<div id="app" class="hidden">
+  <!-- AUTH -->
+  <div id="auth">
+    <h3>Вход / Регистрация</h3>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <input id="username" placeholder="Имя профиля">
+    <button onclick="register()">Регистрация</button>
+    <button onclick="login()">Вход</button>
+  </div>
 
-<div class="card">
-  <textarea id="postText" placeholder="Что нового?"></textarea>
-  <input type="file" id="postImg">
-  <button onclick="addPost()">Опубликовать</button>
-</div>
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <h3 id="profileName"></h3>
 
-<div id="posts"></div>
+    <h4>Новый пост</h4>
+    <textarea id="postText" placeholder="Что нового?"></textarea>
+    <input id="postImage" placeholder="Ссылка на картинку (необязательно)">
+    <button onclick="createPost()">Опубликовать</button>
+
+    <h4>Лента</h4>
+    <div id="posts"></div>
+  </div>
 
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
-  authDomain: "sosiologe.firebaseapp.com",
-  databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
-  projectId: "sosiologe",
-  storageBucket: "sosiologe.appspot.com",
-  messagingSenderId: "651066103994",
-  appId: "1:651066103994:web:13f35d4e31bba79c160a83"
-};
+  // 🔥 ТВОЙ КОНФИГ — ОН УЖЕ ПРАВИЛЬНЫЙ
+  const firebaseConfig = {
+    apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
+    authDomain: "sosiologe.firebaseapp.com",
+    databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
+    projectId: "sosiologe",
+    storageBucket: "sosiologe.firebasestorage.app",
+    messagingSenderId: "651066103994",
+    appId: "1:651066103994:web:13f35d4e31bba79c160a83"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
-const storage = firebase.storage();
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
 
-const ADMIN_UID = "fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
+  const authDiv = document.getElementById('auth');
+  const appDiv = document.getElementById('app');
+  const profileName = document.getElementById('profileName');
+  const postsDiv = document.getElementById('posts');
+  const logoutBtn = document.getElementById('logoutBtn');
 
-auth.onAuthStateChanged(u=>{
-  if(u){
-    authBox(false);
-    loadProfile(u);
-    loadPosts();
-  }else{
-    authBox(true);
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      authDiv.classList.add('hidden');
+      appDiv.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+
+      db.ref('users/' + user.uid).once('value').then(snap => {
+        profileName.innerText = snap.val().name;
+      });
+
+      loadPosts();
+    } else {
+      authDiv.classList.remove('hidden');
+      appDiv.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+  });
+
+  function register() {
+    const email = email.value;
+    const password = document.getElementById('password').value;
+    const name = document.getElementById('username').value;
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => {
+        db.ref('users/' + cred.user.uid).set({ name });
+      })
+      .catch(e => alert(e.message));
   }
-});
 
-function authBox(show){
-  auth.classList.toggle("hidden",!show);
-  app.classList.toggle("hidden",show);
-}
+  function login() {
+    auth.signInWithEmailAndPassword(
+      email.value,
+      document.getElementById('password').value
+    ).catch(e => alert(e.message));
+  }
 
-function register(){
-  auth.createUserWithEmailAndPassword(email.value,pass.value).then(res=>{
-    db.ref("users/"+res.user.uid).set({
-      name:name.value,
-      avatar:"https://i.imgur.com/6VBx3io.png",
-      banned:false
+  logoutBtn.onclick = () => auth.signOut();
+
+  function createPost() {
+    const user = auth.currentUser;
+    const text = postText.value;
+    const img = postImage.value;
+
+    if (!text) return;
+
+    const postRef = db.ref('posts').push();
+    postRef.set({
+      uid: user.uid,
+      text,
+      img,
+      time: Date.now()
     });
-  });
-}
 
-function login(){
-  auth.signInWithEmailAndPassword(email.value,pass.value);
-}
+    postText.value = '';
+    postImage.value = '';
+  }
 
-function loadProfile(u){
-  db.ref("users/"+u.uid).once("value").then(s=>{
-    avatarBtn.src=s.val().avatar;
-    avatarBtn.style.display="block";
-  });
-}
-
-function addPost(){
-  const u=auth.currentUser;
-  if(!u)return;
-  const id=db.ref("posts").push().key;
-  const file=postImg.files[0];
-  if(file){
-    const ref=storage.ref("posts/"+id);
-    ref.put(file).then(()=>ref.getDownloadURL().then(url=>savePost(id,url)));
-  }else savePost(id,"");
-}
-
-function savePost(id,img){
-  const u=auth.currentUser;
-  db.ref("posts/"+id).set({
-    uid:u.uid,
-    text:postText.value,
-    img,
-    likes:{},
-    time:Date.now()
-  });
-  postText.value="";
-  postImg.value="";
-}
-
-function loadPosts(){
-  db.ref("posts").on("value",snap=>{
-    posts.innerHTML="";
-    snap.forEach(p=>{
-      const d=p.val();
-      const liked=d.likes&&d.likes[auth.currentUser.uid];
-      posts.innerHTML+=`
-      <div class="card post">
-        <b>${d.uid}</b>
-        <p>${d.text}</p>
-        ${d.img?`<img src="${d.img}">`:""}
-        <div>
-          <span class="like" onclick="like('${p.key}')">
-            ❤️ ${d.likes?Object.keys(d.likes).length:0}
-          </span>
-          ${auth.currentUser.uid===ADMIN_UID?`<span class="admin" onclick="del('${p.key}')"> Удалить</span>`:""}
-        </div>
-      </div>`;
+  function loadPosts() {
+    db.ref('posts').on('value', snap => {
+      postsDiv.innerHTML = '';
+      snap.forEach(p => {
+        const post = p.val();
+        const div = document.createElement('div');
+        div.className = 'post';
+        div.innerHTML = `
+          <p>${post.text}</p>
+          ${post.img ? `<img src="${post.img}">` : ''}
+        `;
+        postsDiv.prepend(div);
+      });
     });
-  });
-}
-
-function like(id){
-  const u=auth.currentUser.uid;
-  const ref=db.ref("posts/"+id+"/likes/"+u);
-  ref.once("value").then(s=>{
-    s.exists()?ref.remove():ref.set(true);
-  });
-}
-
-function del(id){
-  if(auth.currentUser.uid===ADMIN_UID)
-    db.ref("posts/"+id).remove();
-}
+  }
 </script>
+
 </body>
 </html>
