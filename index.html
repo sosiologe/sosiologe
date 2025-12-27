@@ -2,42 +2,39 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>sosiologe</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sosiologe</title>
 <style>
-body { margin:0;font-family:sans-serif;background:#0f172a;color:white }
-header { display:flex;justify-content:space-between;align-items:center;padding:10px;background:#020617 }
-button,input,textarea { border-radius:8px;border:none;padding:8px }
-button { background:#2563eb;color:white }
-#auth,#app { max-width:500px;margin:auto;padding:15px }
-.post { background:#020617;margin:10px 0;padding:10px;border-radius:10px }
-.comment { font-size:14px;margin-left:10px;color:#cbd5f5 }
-.admin { color:#f87171;font-size:12px }
+body{margin:0;font-family:Arial;background:#111;color:#fff}
+header{background:#1e1e1e;padding:10px;display:flex;justify-content:space-between}
+button,input,textarea{background:#222;color:#fff;border:1px solid #333;padding:8px;border-radius:6px}
+.post{background:#1c1c1c;margin:10px;padding:10px;border-radius:8px}
+.comment{font-size:14px;color:#ccc;margin-left:10px}
+.hidden{display:none}
 </style>
 </head>
 <body>
 
 <header>
-<b>sosiologe</b>
-<span id="userInfo"></span>
+<b>Sosiologe</b>
+<div id="userBar"></div>
 </header>
 
 <div id="auth">
 <h3>Вход / Регистрация</h3>
-<input id="name" placeholder="Имя"><br><br>
-<input id="email" placeholder="Email"><br><br>
-<input id="password" type="password" placeholder="Пароль"><br><br>
+<input id="email" placeholder="email"><br><br>
+<input id="password" type="password" placeholder="пароль"><br><br>
+<input id="username" placeholder="имя профиля"><br><br>
+<button onclick="login()">Войти</button>
 <button onclick="register()">Регистрация</button>
-<button onclick="login()">Вход</button>
 </div>
 
-<div id="app" style="display:none">
-<textarea id="postText" placeholder="Что нового?"></textarea><br><br>
+<div id="app" class="hidden">
+<h3>Создать пост</h3>
+<textarea id="postText"></textarea><br>
 <button onclick="addPost()">Опубликовать</button>
 <div id="posts"></div>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -53,43 +50,41 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
-
 const ADMIN_UID = "fJj3X9fkrISVtvbSK1Ezf9Njpzz1";
 
 auth.onAuthStateChanged(user=>{
   if(user){
-    document.getElementById("auth").style.display="none";
-    document.getElementById("app").style.display="block";
-    document.getElementById("userInfo").innerText=user.email;
+    document.getElementById("auth").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("userBar").innerHTML =
+      user.email + ' <button onclick="logout()">Выйти</button>';
     loadPosts();
   }
 });
 
 function register(){
-  auth.createUserWithEmailAndPassword(
-    email.value,password.value
-  ).then(u=>{
-    db.ref("users/"+u.user.uid).set({
-      name:name.value || "Без имени",
-      banned:false
-    });
-  }).catch(e=>alert(e.message));
+  auth.createUserWithEmailAndPassword(email.value,password.value)
+  .then(u=>{
+    db.ref("users/"+u.user.uid).set({name:username.value});
+  });
 }
 
 function login(){
-  auth.signInWithEmailAndPassword(
-    email.value,password.value
-  ).catch(e=>alert(e.message));
+  auth.signInWithEmailAndPassword(email.value,password.value);
+}
+
+function logout(){
+  auth.signOut();
 }
 
 function addPost(){
   const user = auth.currentUser;
-  if(!user) return;
-  db.ref("posts").push({
-    uid:user.uid,
+  const id = db.ref().child("posts").push().key;
+  db.ref("posts/"+id).set({
     text:postText.value,
+    uid:user.uid,
     likes:{},
-    time:Date.now()
+    comments:{}
   });
   postText.value="";
 }
@@ -101,17 +96,23 @@ function loadPosts(){
       const d=p.val();
       const div=document.createElement("div");
       div.className="post";
-      const liked=d.likes && d.likes[auth.currentUser.uid];
       div.innerHTML=`
-        <b>${d.uid}</b>
-        <p>${d.text}</p>
-        <button onclick="like('${p.key}')">
-          ❤️ ${d.likes?Object.keys(d.likes).length:0}
-        </button>
-        <button onclick="comment('${p.key}')">💬</button>
-        ${auth.currentUser.uid===ADMIN_UID?
-          `<button class="admin" onclick="ban('${d.uid}')">BAN</button>`:""}
+        <b>${d.text}</b><br>
+        ❤️ ${d.likes?Object.keys(d.likes).length:0}
+        <button onclick="like('${p.key}')">Лайк</button>
+        ${auth.currentUser.uid===ADMIN_UID?`<button onclick="del('${p.key}')">❌</button>`:""}
+        <br>
+        <input placeholder="комментарий" id="c${p.key}">
+        <button onclick="comment('${p.key}')">➕</button>
       `;
+      if(d.comments){
+        Object.values(d.comments).forEach(c=>{
+          const cc=document.createElement("div");
+          cc.className="comment";
+          cc.textContent=c;
+          div.appendChild(cc);
+        });
+      }
       posts.appendChild(div);
     });
   });
@@ -119,22 +120,16 @@ function loadPosts(){
 
 function like(id){
   const uid=auth.currentUser.uid;
-  db.ref("posts/"+id+"/likes/"+uid).set(true);
+  db.ref(`posts/${id}/likes/${uid}`).set(true);
 }
 
 function comment(id){
-  const text=prompt("Комментарий");
-  if(text)
-    db.ref("posts/"+id+"/comments").push({
-      uid:auth.currentUser.uid,text
-    });
+  const t=document.getElementById("c"+id).value;
+  db.ref(`posts/${id}/comments`).push(t);
 }
 
-function ban(uid){
-  if(confirm("Забанить пользователя?")){
-    db.ref("users/"+uid+"/banned").set(true);
-    alert("Забанен");
-  }
+function del(id){
+  db.ref("posts/"+id).remove();
 }
 </script>
 </body>
