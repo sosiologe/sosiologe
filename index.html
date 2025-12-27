@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>sosiologe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0b0f1a;
+  color: white;
+}
+
+.hidden { display: none; }
+
+.center {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,.7);
+}
+
+.card {
+  background: #121a2f;
+  padding: 20px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 360px;
+}
+
+input, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  background: #00ff88;
+  font-size: 16px;
+}
+
+.logout {
+  background: #ff5555;
+}
+
+header {
+  padding: 15px;
+  text-align: right;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #00ff88;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 ВХОД -->
+<div id="auth" class="center">
+  <div class="card">
+    <h2>Вход / Регистрация</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+    <button onclick="register()">Регистрация</button>
+  </div>
+</div>
+
+<!-- 🌍 САЙТ -->
+<div id="app" class="hidden">
+  <header>
+    <div class="avatar" onclick="openProfile()">👤</div>
+  </header>
+  <h1 style="text-align:center">sosiologe</h1>
+  <p style="text-align:center">Конвертация валют (дальше добавим)</p>
+</div>
+
+<!-- 👤 ПРОФИЛЬ -->
+<div id="profile" class="center hidden">
+  <div class="card">
+    <h2>Профиль</h2>
+    <input id="name" placeholder="Имя">
+    <input id="avatar" placeholder="URL аватарки">
+    <button onclick="saveProfile()">Сохранить</button>
+    <button class="logout" onclick="logout()">Выйти</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMhpCKnZnzWryB5q614gbRUt7qdWL-4wg",
+  authDomain: "sosiologe.firebaseapp.com",
+  databaseURL: "https://sosiologe-default-rtdb.firebaseio.com",
+  projectId: "sosiologe",
+  storageBucket: "sosiologe.firebasestorage.app",
+  messagingSenderId: "651066103994",
+  appId: "1:651066103994:web:13f35d4e31bba79c160a83"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+
+const authBox = document.getElementById("auth");
+const appBox = document.getElementById("app");
+const profileBox = document.getElementById("profile");
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    authBox.classList.add("hidden");
+    appBox.classList.remove("hidden");
+  } else {
+    authBox.classList.remove("hidden");
+    appBox.classList.add("hidden");
+  }
+});
+
+window.login = () => {
+  signInWithEmailAndPassword(auth, email.value, password.value)
+    .catch(e => alert(e.message));
+};
+
+window.register = () => {
+  createUserWithEmailAndPassword(auth, email.value, password.value)
+    .catch(e => alert(e.message));
+};
+
+window.openProfile = () => {
+  profileBox.classList.remove("hidden");
+};
+
+window.saveProfile = () => {
+  const user = auth.currentUser;
+  set(ref(db, "users/" + user.uid), {
+    name: name.value,
+    avatar: avatar.value
+  }).then(() => alert("Сохранено ✅"));
+};
+
+window.logout = () => {
+  signOut(auth);
+};
+</script>
+
+</body>
+</html>
