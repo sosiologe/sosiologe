@@ -1,110 +1,98 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>sosiologe</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #fff;
-    }
-    header {
-      padding: 15px;
-      background: #020617;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #38bdf8;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .container {
-      padding: 20px;
-      max-width: 500px;
-      margin: auto;
-    }
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-    button {
-      background: #38bdf8;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    .result {
-      margin-top: 15px;
-      font-size: 18px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>sosiologe</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: Arial; background:#111; color:#fff; margin:20px }
+.card { background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:20px }
+button { padding:6px 10px; cursor:pointer }
+input, select { padding:6px }
+.like { color:red; cursor:pointer }
+</style>
 </head>
 <body>
 
-<header>
-  <h2>sosiologe</h2>
-  <div class="avatar">U</div>
-</header>
+<h2>sosiologe</h2>
 
-<div class="container">
-  <h3>Конвертер валют</h3>
+<div class="card">
+<h3>💱 Конвертация валют</h3>
+<input id="amount" type="number" value="1">
+<select id="from">
+<option>USD</option><option>EUR</option><option>RUB</option>
+</select>
+<select id="to">
+<option>EUR</option><option>USD</option><option>RUB</option>
+</select>
+<button onclick="convert()">Конвертировать</button>
+<p id="result"></p>
+<canvas id="chart"></canvas>
+</div>
 
-  <input id="amount" type="number" placeholder="Сумма" value="1">
-
-  <select id="from">
-    <option value="EUR">EUR</option>
-    <option value="USD">USD</option>
-    <option value="RUB">RUB</option>
-  </select>
-
-  <select id="to">
-    <option value="USD">USD</option>
-    <option value="EUR">EUR</option>
-    <option value="RUB">RUB</option>
-  </select>
-
-  <button onclick="convert()">Конвертировать</button>
-
-  <div class="result" id="result"></div>
+<div class="card">
+<h3>📰 Посты</h3>
+<input id="postText" placeholder="Что нового?">
+<button onclick="addPost()">Опубликовать</button>
+<div id="posts"></div>
 </div>
 
 <script>
+let userId = localStorage.getItem("uid") || Math.random().toString(36).slice(2);
+localStorage.setItem("uid", userId);
+
 async function convert() {
-  const amount = document.getElementById('amount').value;
-  const from = document.getElementById('from').value;
-  const to = document.getElementById('to').value;
-  const resultDiv = document.getElementById('result');
-
-  resultDiv.textContent = 'Загрузка...';
-
-  try {
-    const res = await fetch(`https://api.exchangerate.host/convert?from=${from}&to=${to}&amount=${amount}`);
-    const data = await res.json();
-
-    if (!data.result) {
-      resultDiv.textContent = 'Ошибка курса';
-      return;
-    }
-
-    resultDiv.textContent = `${amount} ${from} = ${data.result.toFixed(2)} ${to}`;
-  } catch (e) {
-    resultDiv.textContent = 'Ошибка подключения';
-  }
+  document.getElementById("result").innerText = "Загрузка...";
+  let a = amount.value;
+  let f = from.value;
+  let t = to.value;
+  let r = await fetch("https://api.exchangerate.host/latest?base="+f);
+  let d = await r.json();
+  let res = (a * d.rates[t]).toFixed(2);
+  result.innerText = `${a} ${f} = ${res} ${t}`;
+  drawChart(d.rates[t]);
 }
+
+let chart;
+function drawChart(rate) {
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById("chart"), {
+    type:"line",
+    data:{ labels:["Курс"], datasets:[{data:[rate]}] }
+  });
+}
+
+let posts = JSON.parse(localStorage.getItem("posts")||"[]");
+
+function addPost() {
+  posts.unshift({ text:postText.value, likes:[], comments:[] });
+  localStorage.setItem("posts",JSON.stringify(posts));
+  postText.value="";
+  renderPosts();
+}
+
+function renderPosts() {
+  postsDiv.innerHTML="";
+  posts.forEach((p,i)=>{
+    let liked = p.likes.includes(userId);
+    postsDiv.innerHTML += `
+    <div class="card">
+      <p>${p.text}</p>
+      <span class="like" onclick="like(${i})">
+      ❤️ ${p.likes.length} ${liked?"(ты лайкнул)":""}
+      </span>
+    </div>`;
+  });
+}
+
+function like(i){
+  let p = posts[i];
+  if(!p.likes.includes(userId)) p.likes.push(userId);
+  localStorage.setItem("posts",JSON.stringify(posts));
+  renderPosts();
+}
+
+renderPosts();
 </script>
 
 </body>
