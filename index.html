@@ -145,14 +145,11 @@
         let history = JSON.parse(localStorage.getItem('trade_history') || '[]'), 
             refreshTimer = 60, isFirstLoad = true, isCalcEnabled = true;
 
-        // Самый стабильный метод получения иконок через универсальный агрегатор
         function getIconUrl(symbol) {
             const crypto = ['BTC','ETH','USDT','BNB','SOL','XRP','ADA','DOGE','TRX','MATIC','LTC','DOT','TON'];
             if (crypto.includes(symbol)) {
-                // Используем CryptoCompare API напрямую для иконок
                 return `https://www.cryptocompare.com/media/20275/${symbol.toLowerCase()}.png?width=50`;
             }
-            // Для валют используем статичные иконки флагов
             const fiat = {
                 'RUB':'russian-ruble', 'USD':'usa-currency', 'EUR':'euro-currency',
                 'GBP':'british-pounds', 'TRY':'turkish-lira', 'KZT':'kazakhstan-tenge', 'UAH':'hryvnia'
@@ -160,7 +157,6 @@
             return `https://img.icons8.com/color/48/${fiat[symbol] || 'currency'}.png`;
         }
 
-        // Специальная заплатка для TON, так как у него часто меняются пути
         const tonIcon = "https://cryptologos.cc/logos/toncoin-ton-logo.png";
 
         async function loadRemoteConfig() {
@@ -189,6 +185,10 @@
             i1.src = s1 === 'TON' ? tonIcon : getIconUrl(s1);
             i2.src = s2 === 'TON' ? tonIcon : getIconUrl(s2);
 
+            // Сохраняем выбор в localStorage
+            localStorage.setItem('last_c1', s1);
+            localStorage.setItem('last_c2', s2);
+
             i1.onerror = () => { i1.src = 'https://img.icons8.com/color/48/generic-sorting-database.png'; };
             i2.onerror = () => { i2.src = 'https://img.icons8.com/color/48/generic-sorting-database.png'; };
         }
@@ -213,6 +213,7 @@
             } catch(e) {}
         }
 
+        // Тема
         if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
         document.getElementById('theme-toggle').onclick = () => { 
             document.body.classList.toggle('light-mode'); 
@@ -235,6 +236,7 @@
             calc();
         };
 
+        // Снег
         const canvas = document.getElementById('snow-canvas'), ctx = canvas.getContext('2d');
         let parts = [];
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -270,11 +272,14 @@
         document.getElementById('c1').onchange = () => calc();
         document.getElementById('c2').onchange = () => calc();
 
-        const s1 = localStorage.getItem('last_c1'), s2 = localStorage.getItem('last_c2');
-        if(s1) document.getElementById('c1').value = s1;
-        if(s2) document.getElementById('c2').value = s2;
-
+        // Запуск
         (async () => { 
+            // 1. Сначала восстанавливаем валюты из памяти
+            const s1 = localStorage.getItem('last_c1'), s2 = localStorage.getItem('last_c2');
+            if(s1) document.getElementById('c1').value = s1;
+            if(s2) document.getElementById('c2').value = s2;
+
+            // 2. Затем грузим конфиг и рынок
             await loadRemoteConfig(); 
             updateMarket(); 
             renderHistory(); 
