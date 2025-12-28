@@ -50,8 +50,9 @@
         input { background: none; border: none; color: var(--text-main); font-size: 26px; font-weight: 800; text-align: right; width: 100%; outline: none; }
 
         .swap-divider { display: flex; justify-content: center; height: 16px; position: relative; z-index: 5; }
-        .swap-btn { background: var(--primary-color); border: 5px solid var(--card-bg); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; position: absolute; top: -16px; transition: 0.5s; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-        .swap-btn svg { width: 22px; height: 22px; }
+        .swap-btn { background: var(--primary-color); border: 5px solid var(--card-bg); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; position: absolute; top: -16px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .swap-btn svg { width: 22px; height: 22px; transition: transform 0.5s; }
+        .swap-btn.rotate svg { transform: rotate(180deg); }
 
         .history-container { width: 90%; max-width: 400px; background: var(--card-bg); border-radius: 24px; padding: 20px; border: 1px solid var(--border-color); margin-bottom: 25px; }
         .history-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; font-weight: 800; }
@@ -185,7 +186,6 @@
             i1.src = s1 === 'TON' ? tonIcon : getIconUrl(s1);
             i2.src = s2 === 'TON' ? tonIcon : getIconUrl(s2);
 
-            // Сохраняем выбор в localStorage
             localStorage.setItem('last_c1', s1);
             localStorage.setItem('last_c2', s2);
 
@@ -213,7 +213,6 @@
             } catch(e) {}
         }
 
-        // Тема
         if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
         document.getElementById('theme-toggle').onclick = () => { 
             document.body.classList.toggle('light-mode'); 
@@ -231,12 +230,12 @@
 
         document.getElementById('swap').onclick = function() {
             if(!isCalcEnabled) return;
+            this.classList.toggle('rotate');
             const c1 = document.getElementById('c1'), c2 = document.getElementById('c2');
             const v = c1.value; c1.value = c2.value; c2.value = v;
             calc();
         };
 
-        // Снег
         const canvas = document.getElementById('snow-canvas'), ctx = canvas.getContext('2d');
         let parts = [];
         function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
@@ -272,14 +271,11 @@
         document.getElementById('c1').onchange = () => calc();
         document.getElementById('c2').onchange = () => calc();
 
-        // Запуск
         (async () => { 
-            // 1. Сначала восстанавливаем валюты из памяти
             const s1 = localStorage.getItem('last_c1'), s2 = localStorage.getItem('last_c2');
             if(s1) document.getElementById('c1').value = s1;
             if(s2) document.getElementById('c2').value = s2;
 
-            // 2. Затем грузим конфиг и рынок
             await loadRemoteConfig(); 
             updateMarket(); 
             renderHistory(); 
