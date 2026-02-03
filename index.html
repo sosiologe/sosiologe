@@ -15,80 +15,61 @@
             --bg-color: #f0f2f5; --card-bg: #ffffff; --input-bg: #f5f5f5;
             --text-main: #1e2329; --text-muted: #707a8a; --border-color: rgba(0, 0, 0, 0.1);
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { 
             background-color: var(--bg-color); color: var(--text-main); font-family: 'Inter', sans-serif; 
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; 
             padding: 120px 15px 40px 15px; transition: 0.5s ease; font-weight: 700; overflow-x: hidden;
         }
-        
+        #maint-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: var(--bg-color); z-index: 10000; display: none;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        #maint-screen h1 { font-size: 48px; font-weight: 900; color: var(--danger-color); margin: 0; }
         .promo-banner {
             position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
             width: calc(100% - 30px); max-width: 380px;
             background: linear-gradient(90deg, #f6465d 0%, #c0392b 100%);
             color: white; text-align: center; padding: 10px 20px; 
-            font-size: 11px; font-weight: 900; letter-spacing: 1px; 
-            z-index: 1000; text-transform: uppercase;
-            border-radius: 16px; box-shadow: 0 8px 20px rgba(246, 70, 93, 0.3);
-            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);
+            font-size: 11px; font-weight: 900; z-index: 1000; text-transform: uppercase; border-radius: 16px;
             display: none; animation: slideDown 0.5s ease;
         }
         @keyframes slideDown { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
         .bg-mesh { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: radial-gradient(circle at 50% -20%, #1e293b, var(--bg-color)); }
         #snow-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
-        
         .live-status { position: absolute; top: 65px; left: 20px; display: flex; align-items: center; gap: 8px; background: var(--card-bg); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color); backdrop-filter: blur(10px); z-index: 110; }
         .controls-wrapper { position: absolute; top: 65px; right: 20px; display: flex; gap: 10px; z-index: 110; }
-        
         .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success-color); position: relative; }
         .dot::after { content: ''; position: absolute; width: 100%; height: 100%; background-color: inherit; border-radius: 50%; animation: pulse 2s infinite; top:0; left:0; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-        
-        .icon-btn { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: var(--text-main); backdrop-filter: blur(10px); font-weight: 900; transition: 0.3s; }
-        .icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }
-        
-        .app-container { width: 100%; max-width: 400px; position: relative; }
-        .logo { font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: -2px; text-align: center; margin-bottom: 35px; margin-top: 25px; background: linear-gradient(180deg, #fff 0%, #475569 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .input-card { background: var(--card-bg); border-radius: 24px; padding: 22px; border: 1px solid var(--border-color); backdrop-filter: blur(15px); width: 100%; position: relative; }
+        .icon-btn, .swap-btn { transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .icon-btn:active { transform: scale(0.9); }
+        .icon-btn { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: var(--text-main); }
+        .logo { font-size: 38px; font-weight: 900; text-transform: uppercase; text-align: center; margin-bottom: 35px; background: linear-gradient(180deg, #fff 0%, #475569 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .input-card { background: var(--card-bg); border-radius: 24px; padding: 22px; border: 1px solid var(--border-color); backdrop-filter: blur(15px); width: 100%; max-width: 400px; margin-bottom: 4px; }
         .input-card label { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
-        
-        /* CLASSIC GAP */
-        .swap-container { height: 1px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 20; margin: 4px 0; }
-        .swap-btn { 
-            background: var(--primary-color); border: 4px solid var(--bg-color); 
-            width: 46px; height: 46px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; color: white; transition: 0.3s;
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-        }
+        .swap-container { height: 1px; display: flex; justify-content: center; align-items: center; position: relative; z-index: 20; width: 100%; max-width: 400px; }
+        .swap-btn { background: var(--primary-color); border: 4px solid var(--bg-color); width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); z-index: 21; }
         .swap-animate { animation: spin 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(180deg); } }
-
         .select-box { display: flex; align-items: center; gap: 8px; background: var(--input-bg); padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border-color); min-width: 115px; }
-        .coin-icon { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; background: #2a2e33; }
-        select { background: none; border: none; color: var(--text-main); font-size: 16px; font-weight: 900; outline: none; width: 100%; }
+        .coin-icon { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+        select { background: none; border: none; color: var(--text-main); font-size: 16px; font-weight: 900; outline: none; width: 100%; cursor: pointer; }
         input { background: none; border: none; color: var(--text-main); font-size: 28px; font-weight: 800; text-align: right; width: 100%; outline: none; }
-        
         .history-container { width: 100%; max-width: 400px; background: var(--card-bg); border-radius: 24px; padding: 22px; margin-top: 20px; border: 1px solid var(--border-color); }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
         .history-coin-info { display: flex; align-items: center; gap: 10px; font-size: 14px; }
         .history-coin-info img { width: 24px; height: 24px; border-radius: 50%; }
-        .history-val { color: var(--primary-color); font-weight: 800; }
-
         .market-overview { width: 100%; max-width: 400px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .market-item { background: var(--card-bg); padding: 12px 15px; border-radius: 16px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; font-size: 13px; }
-        
-        #progress-line { position: fixed; top: 0; left: 0; height: 3px; background: var(--primary-color); z-index: 1000; transition: width 0.1s linear; }
-        .copy-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: white; padding: 12px 24px; border-radius: 12px; font-size: 13px; opacity: 0; transition: 0.3s; z-index: 1000; pointer-events: none; }
-        .copy-toast.show { opacity: 1; bottom: 40px; }
+        .copy-toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--primary-color); color: white; padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 2000; pointer-events: none;}
+        .copy-toast.show { opacity: 1; }
     </style>
 </head>
 <body>
+    <div id="maint-screen"><h1 id="maint-text">OFFLINE</h1><p style="color:var(--text-muted)">Please wait...</p></div>
     <div class="promo-banner" id="promo-text"></div>
     <div class="bg-mesh"></div>
-    <div id="progress-line" style="width: 0%"></div>
     <canvas id="snow-canvas"></canvas>
 
     <div class="live-status">
@@ -97,22 +78,20 @@
     </div>
     
     <div class="controls-wrapper">
-        <button class="icon-btn" id="share-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="icon-btn" id="share-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></button>
         <button class="icon-btn" id="lang-toggle">RU</button>
         <button class="icon-btn" id="theme-toggle"><svg id="theme-icon" viewBox="0 0 24 24"></svg></button>
     </div>
 
-    <div class="app-container">
+    <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center;">
         <div class="logo" id="logo-text">SOSIOLOGE</div>
-        
         <div class="input-card">
-            <label id="lbl-pay">YOU PAY</label>
+            <label id="lbl-pay">ВЫ ОТДАЕТЕ</label>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="select-box"><img id="img-c1" class="coin-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="><select id="c1"></select></div>
-                <input type="number" id="a1" value="100" inputmode="decimal">
+                <div class="select-box"><img id="img-c1" class="coin-icon" src=""><select id="c1"></select></div>
+                <input type="number" id="a1" value="100">
             </div>
         </div>
-
         <div class="swap-container">
             <button class="swap-btn" id="swap">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3">
@@ -120,26 +99,23 @@
                 </svg>
             </button>
         </div>
-
         <div class="input-card">
-            <label id="lbl-receive">YOU RECEIVE</label>
+            <label id="lbl-receive">ВЫ ПОЛУЧАЕТЕ</label>
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="select-box"><img id="img-c2" class="coin-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="><select id="c2"></select></div>
-                <input type="text" id="a2" readonly value="0.0000">
+                <div class="select-box"><img id="img-c2" class="coin-icon" src=""><select id="c2"></select></div>
+                <input type="text" id="a2" readonly style="cursor: pointer;">
             </div>
         </div>
-        
         <div id="dev-text" style="text-align:center; font-size:10px; margin-top:20px; color:var(--text-muted); font-weight:900;"></div>
     </div>
 
     <div class="history-container">
         <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
-            <span id="lbl-history" style="font-size:11px; color:var(--text-muted); letter-spacing:1px;">TRADES HISTORY</span>
-            <span id="clear-history" style="color:var(--danger-color); cursor:pointer; font-size:11px; font-weight:900;">CLEAR</span>
+            <span id="lbl-history" style="font-size:11px; color:var(--text-muted);">ИСТОРИЯ</span>
+            <span id="clear-history" style="color:var(--danger-color); cursor:pointer; font-size:11px; font-weight:900;">ОЧИСТИТЬ</span>
         </div>
         <div id="history-list"></div>
     </div>
-
     <div class="market-overview" id="market-box"></div>
     <div id="copy-toast" class="copy-toast"></div>
 
@@ -149,172 +125,136 @@
 
         let CONFIG = {
             "settings": {"logo_name": "SOSIOLOGE", "dev_text": "DEVELOPED BY Z3NDY76", "banner_text": "", "refresh_time": 60},
-            "status_bar": {"text": "ONLINE", "color": "#02c076"},
-            "currencies": ["RUB", "USD", "EUR", "USDT", "TON", "BTC", "ETH"],
+            "status_bar": {"text": "UPDATE", "color": "#02c076"},
+            "maintenance": {"enabled": false, "offline_text": "OFFLINE"},
+            "currencies": ["RUB","USD","EUR","GBP","TRY","KZT","UAH","BYN","AZN","AMD","GEL","UZS","KGS","BTC","ETH","TON","SOL","USDT","BNB","XRP","DOGE","TRX","LTC","ADA","DOT","AVAX","IRR","PLN","CZK","AED","SAR","ILS","INR","CNY","JPY","KRW","BRL","MXN","CAD","AUD","ZAR"],
             "market_watch": ["BTC", "ETH", "TON", "SOL"]
         };
 
         const i18n = { 
-            en: { p: "YOU PAY", r: "YOU RECEIVE", h: "TRADES HISTORY", cl: "CLEAR", e: "Empty", cp: "Value copied!", sh: "Share link copied!" }, 
-            ru: { p: "ВЫ ОТДАЕТЕ", r: "ВЫ ПОЛУЧАЕТЕ", h: "ИСТОРИЯ СДЕЛОК", cl: "ОЧИСТИТЬ", e: "Нет данных", cp: "Значение скопировано!", sh: "Ссылка скопирована!" } 
+            en: { p: "YOU PAY", r: "YOU RECEIVE", h: "HISTORY", cl: "CLEAR", e: "Empty", cp: "Result copied!", sh: "Share link copied!" }, 
+            ru: { p: "ВЫ ОТДАЕТЕ", r: "ВЫ ПОЛУЧАЕТЕ", h: "ИСТОРИЯ", cl: "ОЧИСТИТЬ", e: "Пусто", cp: "Результат скопирован!", sh: "Ссылка скопирована!" } 
         };
         
-        let lang = localStorage.getItem('lang') || 'ru';
-        let tradeHistory = JSON.parse(localStorage.getItem('trade_history') || '[]');
+        let lang = localStorage.getItem('lang') || 'ru', tradeHistory = JSON.parse(localStorage.getItem('trade_history') || '[]');
+        const clickSfx = new Audio("https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3");
+
+        function play() { clickSfx.currentTime = 0; clickSfx.volume = 0.2; clickSfx.play().catch(()=>{}); }
 
         function getIcon(s) {
-            const fiats = {'RUB':'ru','USD':'us','EUR':'eu','KZT':'kz','UAH':'ua','GBP':'gb','TRY':'tr','BYN':'by','AZN':'az','AMD':'am','GEL':'ge','UZS':'uz','KGS':'kg','IRR':'ir'};
-            if(fiats[s]) return `https://flagcdn.com/w80/${fiats[s]}.png`;
-            if(s === 'TON') return "https://cryptologos.cc/logos/toncoin-ton-logo.png";
-            if(s === 'USDT') return "https://cryptologos.cc/logos/tether-usdt-logo.png";
-            return `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${s.toLowerCase()}.png`;
+            const f = {'RUB':'ru','USD':'us','EUR':'eu','GBP':'gb','TRY':'tr','KZT':'kz','UAH':'ua','BYN':'by','AZN':'az','AMD':'am','GEL':'ge','UZS':'uz','KGS':'kg','IRR':'ir','PLN':'pl','CZK':'cz','AED':'ae','SAR':'sa','ILS':'il','INR':'in','CNY':'cn','JPY':'jp','KRW':'kr','BRL':'br','MXN':'mx','CAD':'ca','AUD':'au','ZAR':'za'};
+            return f[s] ? `https://flagcdn.com/w80/${f[s]}.png` : (s==='TON'?"https://cryptologos.cc/logos/toncoin-ton-logo.png":s==='USDT'?"https://cryptologos.cc/logos/tether-usdt-logo.png":`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${s.toLowerCase()}.png`);
         }
 
         async function loadConfig() {
             try {
                 const res = await fetch(JSON_URL, { headers: { "X-Master-Key": API_KEY } });
-                if(res.ok) { const data = await res.json(); CONFIG = data.record; }
+                if(res.ok) {
+                    const d = await res.json(); CONFIG = d.record;
+                    if(CONFIG.maintenance?.enabled) { document.getElementById('maint-screen').style.display = 'flex'; document.getElementById('maint-text').innerText = CONFIG.maintenance.offline_text; return; }
+                }
             } catch (e) {}
             startApp();
         }
 
         function startApp() {
-            const banner = document.getElementById('promo-text');
-            const status = document.querySelector('.live-status');
-            const ctrls = document.querySelector('.controls-wrapper');
-            const bText = CONFIG.settings.banner_text;
-
-            if (!bText || bText.trim() === "") {
-                banner.style.display = 'none';
-                status.style.top = '25px'; ctrls.style.top = '25px';
-            } else {
-                banner.style.display = 'block'; banner.innerText = bText;
-                status.style.top = '65px'; ctrls.style.top = '65px';
-            }
-
+            const urlParams = new URLSearchParams(window.location.search);
             document.getElementById('logo-text').innerText = CONFIG.settings.logo_name;
             document.getElementById('dev-text').innerText = CONFIG.settings.dev_text;
             document.getElementById('status-text').innerText = CONFIG.status_bar.text;
             document.getElementById('status-dot').style.backgroundColor = CONFIG.status_bar.color;
+            if (CONFIG.settings.banner_text) { const b = document.getElementById('promo-text'); b.style.display = 'block'; b.innerText = CONFIG.settings.banner_text; }
 
             const s1 = document.getElementById('c1'), s2 = document.getElementById('c2');
             s1.innerHTML = ''; s2.innerHTML = '';
             CONFIG.currencies.forEach(c => { s1.add(new Option(c, c)); s2.add(new Option(c, c)); });
             
-            s1.value = localStorage.getItem('last_c1') || "USD";
-            s2.value = localStorage.getItem('last_c2') || "RUB";
+            s1.value = urlParams.get('from') || localStorage.getItem('last_c1') || "USD";
+            s2.value = urlParams.get('to') || localStorage.getItem('last_c2') || "RUB";
+            if(urlParams.get('amt')) document.getElementById('a1').value = urlParams.get('amt');
 
             document.getElementById('lbl-pay').innerText = i18n[lang].p;
             document.getElementById('lbl-receive').innerText = i18n[lang].r;
             document.getElementById('lbl-history').innerText = i18n[lang].h;
             document.getElementById('clear-history').innerText = i18n[lang].cl;
-            document.getElementById('lang-toggle').innerText = lang.toUpperCase();
-
-            updateMarket(); calc(); renderHistory();
             
-            let t = 0; setInterval(() => { 
-                t++; document.getElementById('progress-line').style.width = (t/CONFIG.settings.refresh_time*100)%100+'%'; 
-                if(t%CONFIG.settings.refresh_time===0) updateMarket(); 
-            }, 1000);
+            setIcon(); updateMarket(); calc(false); renderHistory();
+            setInterval(updateMarket, CONFIG.settings.refresh_time * 1000);
         }
 
-        async function calc() {
+        async function calc(save = true) {
             const f = document.getElementById('c1').value, t = document.getElementById('c2').value, a = document.getElementById('a1').value;
             document.getElementById('img-c1').src = getIcon(f); document.getElementById('img-c2').src = getIcon(t);
             localStorage.setItem('last_c1', f); localStorage.setItem('last_c2', t);
-            
-            if(!a || a <= 0) { document.getElementById('a2').value = "0.0000"; return; }
+            if(!a || a <= 0) { document.getElementById('a2').value = "0.00"; return; }
             try {
                 const res = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${f}&tsyms=${t}`);
                 const d = await res.json();
                 if(d[t]) {
-                    const resVal = (a * d[t]).toFixed(d[t] < 1 ? 4 : 2);
-                    document.getElementById('a2').value = resVal;
-                    if(!tradeHistory[0] || tradeHistory[0].a !== resVal) {
-                        tradeHistory.unshift({f, t, a: resVal});
-                        if(tradeHistory.length > 4) tradeHistory.pop();
-                        localStorage.setItem('trade_history', JSON.stringify(tradeHistory));
-                        renderHistory();
-                    }
+                    const rv = (a * d[t]).toFixed(d[t] < 1 ? 4 : 2);
+                    document.getElementById('a2').value = rv;
+                    if(save) { tradeHistory.unshift({f, t, a: rv}); if(tradeHistory.length > 5) tradeHistory.pop(); localStorage.setItem('trade_history', JSON.stringify(tradeHistory)); renderHistory(); }
                 }
             } catch(e) {}
         }
 
         function renderHistory() {
-            const list = document.getElementById('history-list');
-            list.innerHTML = tradeHistory.length ? tradeHistory.map(i => `
+            document.getElementById('history-list').innerHTML = tradeHistory.map(i => `
                 <div class="history-item">
                     <div class="history-coin-info"><img src="${getIcon(i.f)}"> ${i.f} → ${i.t}</div>
-                    <span class="history-val">${i.a}</span>
-                </div>`).join('') : `<div style="text-align:center; font-size:12px; color:var(--text-muted); padding:10px;">${i18n[lang].e}</div>`;
+                    <span style="color:var(--primary-color)">${i.a}</span>
+                </div>`).join('') || `<div style="text-align:center; font-size:12px; color:var(--text-muted); padding:10px;">${i18n[lang].e}</div>`;
         }
 
         async function updateMarket() {
-            const syms = CONFIG.market_watch;
-            document.getElementById('market-box').innerHTML = syms.map(s => `<div class="market-item"><span>${s}</span><span id="p-${s}">...</span></div>`).join('');
             try {
-                const res = await fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${syms.join(',')}&tsyms=USD`);
+                const res = await fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${CONFIG.market_watch.join(',')}&tsyms=USD`);
                 const d = await res.json();
-                syms.forEach(s => { if(d.RAW && d.RAW[s]) document.getElementById(`p-${s}`).innerText = '$' + Math.floor(d.RAW[s].USD.PRICE).toLocaleString(); });
+                document.getElementById('market-box').innerHTML = CONFIG.market_watch.map(s => {
+                    const p = (d.RAW && d.RAW[s]) ? '$' + Math.floor(d.RAW[s].USD.PRICE).toLocaleString() : '...';
+                    return `<div class="market-item"><span>${s}</span><span>${p}</span></div>`;
+                }).join('');
             } catch(e) {}
         }
 
-        function toast(txt) {
-            const el = document.getElementById('copy-toast');
-            el.innerText = txt; el.classList.add('show');
-            setTimeout(() => el.classList.remove('show'), 2000);
-        }
+        function toast(t) { const e = document.getElementById('copy-toast'); e.innerText = t; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 2000); }
 
-        document.getElementById('share-btn').onclick = () => {
+        document.getElementById('swap').onclick = function() { 
+            play(); const s1 = document.getElementById('c1'), s2 = document.getElementById('c2'); 
+            [s1.value, s2.value] = [s2.value, s1.value]; 
+            this.classList.add('swap-animate'); setTimeout(() => this.classList.remove('swap-animate'), 500);
+            calc(true); 
+        };
+        document.getElementById('a1').oninput = () => calc(true);
+        document.getElementById('c1').onchange = () => { play(); calc(true); };
+        document.getElementById('c2').onchange = () => { play(); calc(true); };
+        document.getElementById('a2').onclick = function() { play(); navigator.clipboard.writeText(this.value); toast(i18n[lang].cp); };
+        document.getElementById('clear-history').onclick = () => { play(); tradeHistory = []; localStorage.removeItem('trade_history'); renderHistory(); };
+        document.getElementById('lang-toggle').onclick = () => { play(); lang = lang === 'ru' ? 'en' : 'ru'; localStorage.setItem('lang', lang); location.reload(); };
+        document.getElementById('theme-toggle').onclick = () => { play(); document.body.classList.toggle('light-mode'); localStorage.setItem('theme', document.body.classList.contains('light-mode')?'light':'dark'); setIcon(); };
+        
+        document.getElementById('share-btn').onclick = () => { 
+            play();
             const f = document.getElementById('c1').value, t = document.getElementById('c2').value, a = document.getElementById('a1').value;
-            const text = `SOSIOLOGE: ${a} ${f} = ${document.getElementById('a2').value} ${t}\nLink: ${window.location.href}`;
-            navigator.clipboard.writeText(text).then(() => toast(i18n[lang].sh));
+            const shareUrl = `${window.location.origin}${window.location.pathname}?from=${f}&to=${t}&amt=${a}`;
+            navigator.clipboard.writeText(shareUrl).then(() => toast(i18n[lang].sh));
         };
 
-        document.getElementById('theme-toggle').onclick = () => {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-            setIcon();
-        };
-
-        if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
-        function setIcon() {
-            const isL = document.body.classList.contains('light-mode');
-            document.getElementById('theme-icon').innerHTML = isL ? '<circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>' : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+        function setIcon() { 
+            const isL = document.body.classList.contains('light-mode'); 
+            document.getElementById('theme-icon').innerHTML = isL ? '<circle cx="12" cy="12" r="5" fill="none" stroke="currentColor"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor"/>' : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="none" stroke="currentColor"/>'; 
         }
-        setIcon();
-
-        document.getElementById('swap').onclick = function() {
-            const s1 = document.getElementById('c1'), s2 = document.getElementById('c2');
-            [s1.value, s2.value] = [s2.value, s1.value];
-            this.classList.add('swap-animate');
-            setTimeout(() => this.classList.remove('swap-animate'), 500);
-            calc();
-        };
-
-        document.getElementById('lang-toggle').onclick = () => {
-            lang = lang === 'ru' ? 'en' : 'ru';
-            localStorage.setItem('lang', lang);
-            location.reload();
-        };
-
-        document.getElementById('a1').oninput = calc;
-        document.getElementById('c1').onchange = calc;
-        document.getElementById('c2').onchange = calc;
-        document.getElementById('clear-history').onclick = () => { tradeHistory = []; localStorage.removeItem('trade_history'); renderHistory(); };
-        document.getElementById('a2').onclick = function() { navigator.clipboard.writeText(this.value); toast(i18n[lang].cp); };
+        if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
 
         const canvas = document.getElementById('snow-canvas'), ctx = canvas.getContext('2d');
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resize; resize();
-        let p = Array.from({length:30}, () => ({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, d: Math.random()*0.5+0.2}));
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let p = Array.from({length:35}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*15+12, d: Math.random()*0.6+0.4 }));
         function draw() {
-            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "rgba(255,255,255,0.3)";
-            p.forEach(i => { ctx.beginPath(); ctx.arc(i.x, i.y, i.s, 0, 7); ctx.fill(); i.y+=i.d; if(i.y>canvas.height) i.y=-5; });
+            ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle = "rgba(246, 70, 93, 0.45)";
+            p.forEach(i => { ctx.font = i.s+"px serif"; ctx.fillText("❤", i.x, i.y); i.y += i.d; if(i.y > canvas.height) i.y = -20; });
             requestAnimationFrame(draw);
         }
-        draw();
-        loadConfig();
+        draw(); loadConfig();
     </script>
 </body>
 </html>
