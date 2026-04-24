@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <!-- Тот самый тег из скриншота -->
+    <meta name="p:domain_verify" content="f13f651fddb6e4383b021ca813803dde"/>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор оценок</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        h1 { color: #333; margin-bottom: 1.5rem; font-size: 1.5rem; }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #4CAF50; }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        .label { color: #666; font-size: 0.9rem; }
+        .hint { color: #999; font-size: 0.8rem; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Мой средний балл</h1>
+    <input type="text" id="gradesInput" placeholder="Введи оценки (например: 5,4,5,3)" autocomplete="off">
+    
+    <div class="result-box">
+        <div class="label">Средний балл за четверть:</div>
+        <div id="averageScore" class="score">0.00</div>
+        <div id="finalGrade" class="label">Итоговая: —</div>
+    </div>
+
+    <p class="hint">Просто вводи цифры подряд или через запятую</p>
+</div>
+
+<script>
+    const input = document.getElementById('gradesInput');
+    const display = document.getElementById('averageScore');
+    const finalGradeDisplay = document.getElementById('finalGrade');
+
+    input.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/[^2-5]/g, '');
+        let grades = val.split('').map(Number);
+
+        if (grades.length > 0) {
+            let sum = grades.reduce((a, b) => a + b, 0);
+            let avg = sum / grades.length;
+            
+            display.textContent = avg.toFixed(2);
+            
+            let final = Math.round(avg);
+            finalGradeDisplay.textContent = `Итоговая: ${final}`;
+            
+            if (avg >= 4.5) display.style.color = '#4CAF50';
+            else if (avg >= 3.5) display.style.color = '#FFA000';
+            else if (avg >= 2.5) display.style.color = '#FF5722';
+            else display.style.color = '#f44336';
+        } else {
+            display.textContent = "0.00";
+            finalGradeDisplay.textContent = "Итоговая: —";
+            display.style.color = '#4CAF50';
+        }
+    });
+</script>
+
+</body>
+</html>
 
